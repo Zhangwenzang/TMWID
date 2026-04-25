@@ -1,8 +1,8 @@
-# TellMeWhenItsDone — 桌面气泡设计文档
+# TellMeWhenItsDone — 菜单栏 App 设计文档
 
 ## 概述
 
-一个基于 SwiftUI + Lottie 的 macOS 桌面气泡应用，实时监控多个 Claude Code 窗口的任务状态，通过三种动画（Working / Done / Ask）告知用户当前进度。解决多窗口场景下用户无法实时感知 AI 进度的问题。
+一个 macOS 菜单栏 App，以无边框透明窗口 + Lottie 动画的形式展示 Claude Code 会话状态。后台监听本地状态文件，当有状态变化时弹出对应动画，点击可跳回对应的终端窗口。解决多窗口场景下用户无法实时感知 AI 进度的问题。
 
 ## 架构
 
@@ -12,7 +12,7 @@
 
 - 状态目录：`~/.tellmewhenitsdone/state/`
 - 每个会话一个文件：`{session_id}.json`
-- 气泡应用监听该目录的文件系统事件（FSEvent）
+- App 监听该目录的文件系统事件（`DispatchSourceFileSystemObject`）
 
 ### 状态文件格式
 
@@ -21,7 +21,7 @@
   "sessionId": "unique-session-id",
   "status": "working",
   "timestamp": 1777129857,
-  "windowTitle": "Claude - project-name"
+  "terminalPid": 12345
 }
 ```
 
@@ -32,7 +32,7 @@
 
 ### Hook 配置
 
-气泡应用启动时自动编辑 Claude Code 的 `settings.json` hooks，注入以下条目：
+App 首次启动时自动编辑 Claude Code 的 `~/.claude/settings.json` hooks，注入以下条目：
 
 | Hook 事件 | 匹配条件 | 动作 |
 |-----------|---------|------|
@@ -41,79 +41,82 @@
 | `PreToolUse` | `AskUserQuestion` | 写入 `{"status": "ask", ...}` |
 | `Notification` | `permission_prompt` | 写入 `{"status": "ask", ...}` |
 
-写入命令示例（通过 `echo` 追加到状态文件，原子写入避免竞态）：
+写入命令示例：
 ```bash
 echo '{"sessionId":"abc","status":"done","timestamp":1777129857}' > ~/.tellmewhenitsdone/state/abc.json
 ```
 
-## 气泡应用架构
+## App 架构
 
-### SwiftUI 组件
+### macOS 菜单栏 App 模式
+
+- 使用 `MenuBarExtra`（macOS 13+）或自定义 `NSStatusItem` 实现菜单栏图标
+- 点击菜单栏图标或收到新状态时，弹出无边框窗口
+
+### 弹出窗口
 
 ```
-TellMeWhenItsDoneApp
-├── AppState (ObservableObject)
-│   ├── sessions: [SessionState]
-│   └── workingCount / doneCount / askCount
-├── ContentView
-│   ├── StatusBarBubble (可收起模式)
-│   │   ├── CollapsedView (菜单栏小图标/小挂栏)
-│   │   └── ExpandedView (展开的气泡)
-│   │       ├── StatusCard(.working)
-│   │       │   ├── Lottie animation (WORKING)
-│   │       │   └── count badge
-│   │       ├── StatusCard(.done)
-│   │       │   ├── Lottie animation (workdone)
-│   │       │   └── count badge
-│   │       └── StatusCard(.ask)
-│   │           ├── Lottie animation (AUQ)
-│   │           └── count badge
-│   └── SessionListSheet (展开后可选)
-└── StateFileWatcher
-    └── FSEventStream → parse JSON → update AppState
+SwiftUI Window
+├── .windowStyle(.hiddenTitleBar)
+├── .background(.clear) / .opacity(0)
+├── .resizable(false)
+└── ContentView
+    ├── AnimationDisplay (当前活跃状态)
+    │   ├── LottieView(working.json) — 循环播放
+    │   ├── LottieView(done.json) — 播放一次
+    │   └── LottieView(ask.json) — 播放一次
+    ├── CountBadges (各状态计数)
+    │   ├── WorkingBadge (count)
+    │   ├── DoneBadge (count)
+    │   └── AskBadge (count, 脉冲高亮)
+    └── ClickHandler → 跳回对应终端窗口
 ```
 
 ### Lottie 动画
 
-三个 MP4 文件需转换为 Lottie JSON 格式：
+三个 MP4 文件需转换为 Lottie JSON（`.lottie` 或 `.json`）格式：
 - `WORKING.mp4` → `working.json`（循环播放）
 - `workdone.mp4` → `done.json`（播放一次）
 - `AUQ.mp4` → `ask.json`（播放一次，带突出效果）
 
-转换方式：使用 `lottie-ios` 提供的 `LottieConverter` 或通过 Lottie Files CLI 工具。
+转换方案：
+1. **AE + Bodymovin**：设计师用 After Effects 重新制作动画，导出为 Lottie
+2. **MP4 → GIF → Lottie**：通过 LottieFiles CLI 或第三方工具链（如 `lottie-converter` npm 包）
+3. **手动制作**：在 LottieFiles 上找相似动画，微调替换
+
+使用 `lottie-ios`（`Lottie` SPM 包）在 SwiftUI 中播放。
+
+### 核心功能
+
+1. **后台监听**：监听 `~/.tellmewhenitsdone/state/` 目录变化，实时更新内部状态
+2. **弹窗动画**：状态变化时弹出/更新窗口，播放对应 Lottie 动画
+3. **点击跳回**：点击动画窗口时，通过 `terminalPid` 或 `osascript` 激活对应的终端窗口
 
 ## UI 行为
 
-### 三种状态卡片
+### 状态展示
 
-每种状态独立显示为一个卡片模块：
-- 有数据时才显示，无数据时隐藏
-- 最多同时显示三个卡片
-- 每个卡片包含：Lottie 动画 + 计数数字 + 状态标签
+- 三种状态独立显示计数 badge（有数据才出现）
+- 动画在窗口中央播放，计数在下方或侧边排列
+- `ask` 状态有额外脉冲高亮效果
 
-### 尺寸与常驻
+### 窗口行为
 
-- 默认小尺寸展开，能看清动画内容
-- 支持收起为菜单栏小图标/小挂栏
-- 支持展开为完整气泡
-- 始终浮动在其他窗口上方（`NSWindow.Level.floating`）
-
-### 状态优先级
-
-当状态发生变化时：
-- `ask` 状态卡片有额外的高亮/脉冲效果以突出
-- 三种状态卡片独立显示，不互相覆盖
-- Done 状态在用户确认后自动消失（从文件列表移除对应 session）
+- 默认：菜单栏显示状态图标
+- 收到新状态时：自动弹出动画窗口
+- 点击窗口：激活对应终端窗口
+- 无活跃会话时：窗口自动隐藏
 
 ## 错误处理
 
 - 状态文件不存在/损坏：跳过该 session，记录日志
 - 状态目录不存在：自动创建
 - Hook 已存在：不重复注入，检测已有配置
-- 气泡应用崩溃重启：重新扫描状态目录恢复状态
+- App 崩溃重启：重新扫描状态目录恢复状态
+- 终端窗口已关闭：点击时不执行跳转
 
 ## 测试
 
 - 单元测试：状态文件解析、计数聚合逻辑
-- 集成测试：模拟多个 session 文件写入，验证气泡状态更新
-- UI 测试：Lottie 动画播放、窗口浮动层级、收起/展开交互
+- 集成测试：模拟多个 session 文件写入，验证窗口状态更新
+- UI 测试：Lottie 动画播放、窗口透明度、点击跳转行为
