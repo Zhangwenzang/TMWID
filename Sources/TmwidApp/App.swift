@@ -4,10 +4,13 @@ import Tmwid
 @main
 struct TmwidApp: App {
     @StateObject private var state = AppState()
+    @AppStorage("soundEnabled") private var soundEnabled = true
+    @AppStorage("bubbleEnabled") private var bubbleEnabled = true
     @State private var watcher: StateFileWatcher?
     @State private var health: HealthChecker?
     @State private var bubble: BubbleWindowController?
     @State private var injector: SettingsInjector?
+    @State private var sound: SoundPlayer?
 
     private let paths = Paths()
 
@@ -15,9 +18,17 @@ struct TmwidApp: App {
         MenuBarExtra {
             MenuBarView(
                 state: state,
-                onQuit: { NSApplication.shared.terminate(nil) },
-                onReinject: { try? injector?.install() },
-                onUninstall: { try? injector?.uninstall() }
+                onQuit: {
+                    try? injector?.uninstall()
+                    NSApplication.shared.terminate(nil)
+                },
+                onBubbleToggle: { enabled in
+                    if enabled {
+                        bubble?.restoreFromMenuBar()
+                    } else {
+                        bubble?.minimizeToMenuBar()
+                    }
+                }
             )
         } label: {
             MenuBarLabel(state: state)
@@ -25,7 +36,13 @@ struct TmwidApp: App {
         }
         .menuBarExtraStyle(.menu)
         .onChange(of: state.sessions) { _ in
-            bubble?.showIfNeeded()
+            sound?.playIfNeeded(
+                currentSessions: state.sessions,
+                enabled: soundEnabled
+            )
+            if bubbleEnabled {
+                bubble?.showIfNeeded()
+            }
         }
     }
 
@@ -45,6 +62,12 @@ struct TmwidApp: App {
         h.startPeriodic()
         health = h
 
-        bubble = BubbleWindowController(state: state)
+        let b = BubbleWindowController(state: state)
+        b.onMinimize = {
+            bubbleEnabled = false
+        }
+        bubble = b
+
+        sound = SoundPlayer()
     }
 }
