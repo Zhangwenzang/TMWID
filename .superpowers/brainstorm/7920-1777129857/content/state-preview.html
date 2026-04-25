@@ -1,0 +1,48 @@
+<h2>桌面气泡 — 三种状态预览</h2>
+<p class="subtitle">这是你的三个 MP4 动画在桌面上的效果示意，确认一下每个状态的用途</p>
+
+<div class="cards">
+  <div class="card" data-choice="workdone">
+    <div class="card-image" style="background: linear-gradient(135deg, #4ade80, #22c55e); display:flex; align-items:center; justify-content:center; min-height:180px; font-size:60px;">
+      🎉
+    </div>
+    <div class="card-body">
+      <h3>Work Done</h3>
+      <p><code>workdone.mp4</code> — 任务完成时播放，摸鱼视频切成庆祝动效</p>
+      <p class="label">触发: Hook Stop</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="working">
+    <div class="card-image" style="background: linear-gradient(135deg, #60a5fa, #3b82f6); display:flex; align-items:center; justify-content:center; min-height:180px; font-size:60px;">
+      ⚙️
+    </div>
+    <div class="card-body">
+      <h3>Working</h3>
+      <p><code>WORKING.mp4</code> — AI 正在工作时循环播放，让你知道它还在跑</p>
+      <p class="label">触发: AI 开始执行任务</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="ask">
+    <div class="card-image" style="background: linear-gradient(135deg, #fb923c, #f97316); display:flex; align-items:center; justify-content:center; min-height:180px; font-size:60px;">
+      ❓
+    </div>
+    <div class="card-body">
+      <h3>Ask User Question</h3>
+      <p><code>AUQ.mp4</code> — 需要用户审批或回答问题时弹出</p>
+      <p class="label">触发: Hook PreToolUse / Notification</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 32px;">
+  <h3>核心交互概念</h3>
+  <p class="subtitle">气泡行为定义</p>
+  <div style="background: #1e1e2e; border-radius: 12px; padding: 20px; font-family: monospace; font-size: 13px; line-height: 1.8;">
+    <div>🔵 <b>悬浮位置：</b>桌面边缘或屏幕角落，半透明，不遮挡内容</div>
+    <div>🔄 <b>状态切换：</b>默认隐藏 → 有任务时显示 Working → 完成时切换 Work Done</div>
+    <div>⚡ <b>动效触发：</b>状态切换时播放对应 MP4，播完回到安静状态</div>
+    <div>👆 <b>用户交互：</b>点击可关闭/最小化，再次唤醒通过菜单或快捷键</div>
+  </div>
+</div>

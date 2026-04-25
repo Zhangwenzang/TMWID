@@ -1,0 +1,40 @@
+<h2>三种架构方案</h2>
+<p class="subtitle">核心差异：Hook 如何写入状态文件，以及气泡应用如何读取</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>直接文件写入（推荐）</h3>
+      <p>Hook 直接 <code>echo</code> JSON 到状态文件，SwiftUI 用 <code>DispatchSourceFileSystemObject</code> 监听。零依赖，最简单。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Hook 只需一行 shell，无需额外工具</li><li>SwiftUI 原生支持文件系统监听</li><li>无中间进程，无额外延迟</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>多窗口并发写入需处理竞态（用追加模式 + 原子写入）</li><li>文件损坏时需要恢复</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>CLI 工具 + 状态目录</h3>
+      <p>提供一个小型 CLI（Swift/Python），Hook 调用它来写入状态。CLI 负责原子写入、唯一 ID、错误处理。气泡应用读取结构化的状态目录。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>原子写入和错误处理封装在 CLI 里</li><li>支持更多元数据（任务ID、窗口标识等）</li><li>状态目录结构清晰，易于调试</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>多一个编译产物需要安装</li><li>Hook 配置多了一步调用</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Named Pipe (FIFO)</h3>
+      <p>气泡启动时创建一个 named pipe，Hook 通过写入 pipe 发送事件。气泡端持续读取 pipe，天然有序，无竞态。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>实时推送，零轮询</li><li>消息天然有序</li><li>写入方不需要知道读取方状态</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>pipe 是单向的，重启气泡需要重建</li><li>Hook 写入 pipe 时如果读取端崩溃会阻塞</li><li>macOS 对 FIFO 的支持不如 Linux 稳定</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

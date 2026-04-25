@@ -1,0 +1,8 @@
+{"type":"server-started","port":52734,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:52734","screen_dir":"/Users/zhangwencang/CodeBuddy/Tellmewhenitsdone/.superpowers/brainstorm/7920-1777129857/content","state_dir":"/Users/zhangwencang/CodeBuddy/Tellmewhenitsdone/.superpowers/brainstorm/7920-1777129857/state"}
+{"type":"screen-added","file":"/Users/zhangwencang/CodeBuddy/Tellmewhenitsdone/.superpowers/brainstorm/7920-1777129857/content/state-preview.html"}
+{"source":"user-event","type":"click","text":"🎉\n    \n    \n      Work Done\n      workdone.mp4 — 任务完成时播放，摸鱼视频切成庆祝动效\n      触发: Hook Stop","choice":"workdone","id":null,"timestamp":1777130061387}
+{"source":"user-event","type":"click","text":"⚙️\n    \n    \n      Working\n      WORKING.mp4 — AI 正在工作时循环播放，让你知道它还在跑\n      触发: AI 开始执行任务","choice":"working","id":null,"timestamp":1777130062189}
+{"source":"user-event","type":"click","text":"❓\n    \n    \n      Ask User Question\n      AUQ.mp4 — 需要用户审批或回答问题时弹出\n      触发: Hook PreToolUse / Notification","choice":"ask","id":null,"timestamp":1777130063097}
+{"type":"screen-added","file":"/Users/zhangwencang/CodeBuddy/Tellmewhenitsdone/.superpowers/brainstorm/7920-1777129857/content/architecture.html"}
+{"type":"screen-added","file":"/Users/zhangwencang/CodeBuddy/Tellmewhenitsdone/.superpowers/brainstorm/7920-1777129857/content/ui-layout.html"}
+{"type":"server-stopped","reason":"idle timeout"}
