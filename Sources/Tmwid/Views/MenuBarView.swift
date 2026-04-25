@@ -2,31 +2,38 @@ import SwiftUI
 
 public struct MenuBarView: View {
     @ObservedObject var state: AppState
+    @AppStorage("soundEnabled") var soundEnabled = true
+    @AppStorage("bubbleEnabled") var bubbleEnabled = true
     let onQuit: () -> Void
-    let onReinject: () -> Void
-    let onUninstall: () -> Void
+    let onBubbleToggle: (Bool) -> Void
 
-    public init(state: AppState, onQuit: @escaping () -> Void, onReinject: @escaping () -> Void, onUninstall: @escaping () -> Void) {
+    public init(
+        state: AppState,
+        onQuit: @escaping () -> Void,
+        onBubbleToggle: @escaping (Bool) -> Void
+    ) {
         self.state = state
         self.onQuit = onQuit
-        self.onReinject = onReinject
-        self.onUninstall = onUninstall
+        self.onBubbleToggle = onBubbleToggle
     }
 
     public var body: some View {
         VStack(alignment: .leading) {
             if state.isEmpty {
-                Text("No active sessions")
+                Text("暂无活跃会话")
             } else {
-                if state.workingCount > 0 { Text("Working: \(state.workingCount)") }
-                if state.askCount > 0     { Text("Ask: \(state.askCount)") }
-                if state.doneCount > 0    { Text("Done: \(state.doneCount)") }
+                if state.workingCount > 0 { Text("工作中: \(state.workingCount)") }
+                if state.askCount > 0     { Text("举手中: \(state.askCount)") }
+                if state.doneCount > 0    { Text("摸鱼中: \(state.doneCount)") }
             }
             Divider()
-            Button("Re-install hooks", action: onReinject)
-            Button("Uninstall hooks", action: onUninstall)
+            Toggle("声音", isOn: $soundEnabled)
+            Toggle("浮窗", isOn: $bubbleEnabled)
+                .onChange(of: bubbleEnabled) { newValue in
+                    onBubbleToggle(newValue)
+                }
             Divider()
-            Button("Quit", action: onQuit)
+            Button("退出", action: onQuit)
         }
     }
 }
