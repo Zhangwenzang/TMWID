@@ -141,7 +141,7 @@ public final class BubbleWindowController {
         if let screen = NSScreen.main {
             let margin: CGFloat = 20
             let x = screen.visibleFrame.maxX - size.width - margin
-            let y = screen.visibleFrame.maxY - size.height - margin
+            let y = screen.visibleFrame.minY + margin
             w.setFrameOrigin(NSPoint(x: x, y: y))
         }
 
