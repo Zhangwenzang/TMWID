@@ -11,7 +11,7 @@ let package = Package(
         .target(
             name: "Tmwid",
             path: "Sources/Tmwid",
-            exclude: ["App.swift"],
+
             resources: [.process("Resources")]
         ),
         .executableTarget(
