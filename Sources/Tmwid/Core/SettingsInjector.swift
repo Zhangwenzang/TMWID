@@ -109,23 +109,23 @@ public final class SettingsInjector {
         var settings = try readSettings()
         var hooks = (settings["hooks"] as? SettingsJSON) ?? [:]
 
-        let injections: [(event: String, matcher: String?, status: String?)] = [
-            ("UserPromptSubmit", nil, "working"),
-            ("Stop", nil, "done"),
-            ("PreToolUse", "AskUserQuestion", "ask"),
-            ("PostToolUse", "AskUserQuestion", "working"),
-            ("PostToolUse", nil, "working"),
-            ("Notification", "permission_prompt", "ask"),
-            ("SessionEnd", nil, nil),  // cleanup
+        let injections: [(event: String, matcher: String?, script: String)] = [
+            ("UserPromptSubmit", nil, HookTemplate.scriptForStatus("working")),
+            ("Stop", nil, HookTemplate.scriptForStatus("done")),
+            ("PreToolUse", "AskUserQuestion", HookTemplate.scriptForStatus("ask")),
+            ("PreToolUse", nil, HookTemplate.preMarkerScript),
+            ("PostToolUse", "AskUserQuestion", HookTemplate.scriptForStatus("working")),
+            ("PostToolUse", nil, HookTemplate.postToolResetScript),
+            ("Notification", "permission_prompt", HookTemplate.scriptForStatus("ask")),
+            ("SessionEnd", nil, HookTemplate.cleanupScript),
         ]
 
         for inj in injections {
-            let script = inj.status.map { HookTemplate.scriptForStatus($0) } ?? HookTemplate.cleanupScript
             hooks = upsertHook(
                 into: hooks,
                 event: inj.event,
                 matcher: inj.matcher,
-                command: script
+                command: inj.script
             )
         }
 

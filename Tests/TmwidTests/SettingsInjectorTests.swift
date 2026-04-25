@@ -150,6 +150,82 @@ final class SettingsInjectorTests: XCTestCase {
         XCTAssertTrue(HookTemplate.postToolResetScript.contains("\"working\""))
     }
 
+    // MARK: - Generic hook injection tests
+
+    func testInjectCreatesGenericPreToolUse() throws {
+        let tmp = makeTempDir()
+        let injector = SettingsInjector(paths: Paths(home: tmp))
+        try injector.install()
+        let settings = try injector.readSettings()
+        let hooks = settings["hooks"] as? [String: Any]
+        let preToolGroups = hooks?["PreToolUse"] as? [[String: Any]] ?? []
+        // Should have two groups: one with matcher "AskUserQuestion", one without
+        let noMatcherGroup = preToolGroups.first { $0["matcher"] == nil }
+        XCTAssertNotNil(noMatcherGroup, "Generic PreToolUse group should exist")
+        let inner = (noMatcherGroup?["hooks"] as? [[String: Any]])?.first
+        let cmd = inner?["command"] as? String ?? ""
+        XCTAssertTrue(cmd.contains(".pre"), "Generic PreToolUse should write .pre file")
+    }
+
+    func testInjectCreatesGenericPostToolUse() throws {
+        let tmp = makeTempDir()
+        let injector = SettingsInjector(paths: Paths(home: tmp))
+        try injector.install()
+        let settings = try injector.readSettings()
+        let hooks = settings["hooks"] as? [String: Any]
+        let postToolGroups = hooks?["PostToolUse"] as? [[String: Any]] ?? []
+        let noMatcherGroup = postToolGroups.first { $0["matcher"] == nil }
+        XCTAssertNotNil(noMatcherGroup, "Generic PostToolUse group should exist")
+        let inner = (noMatcherGroup?["hooks"] as? [[String: Any]])?.first
+        let cmd = inner?["command"] as? String ?? ""
+        XCTAssertTrue(cmd.contains("rm -f"), "Generic PostToolUse should delete .pre file")
+        XCTAssertTrue(cmd.contains("\"working\""), "Generic PostToolUse should write working status")
+    }
+
+    func testGenericAndSpecificHooksCoexist() throws {
+        let tmp = makeTempDir()
+        let injector = SettingsInjector(paths: Paths(home: tmp))
+        try injector.install()
+        let settings = try injector.readSettings()
+        let hooks = settings["hooks"] as? [String: Any]
+
+        let preToolGroups = hooks?["PreToolUse"] as? [[String: Any]] ?? []
+        XCTAssertEqual(preToolGroups.count, 2, "PreToolUse should have specific + generic groups")
+        let preMatchers = Set(preToolGroups.compactMap { $0["matcher"] as? String })
+        XCTAssertTrue(preMatchers.contains("AskUserQuestion"))
+
+        let postToolGroups = hooks?["PostToolUse"] as? [[String: Any]] ?? []
+        XCTAssertEqual(postToolGroups.count, 2, "PostToolUse should have specific + generic groups")
+    }
+
+    func testIdempotentInstallNoGenericDuplicates() throws {
+        let tmp = makeTempDir()
+        let injector = SettingsInjector(paths: Paths(home: tmp))
+        try injector.install()
+        try injector.install()
+        try injector.install()
+        let settings = try injector.readSettings()
+        let hooks = settings["hooks"] as? [String: Any]
+        let preToolGroups = hooks?["PreToolUse"] as? [[String: Any]] ?? []
+        for group in preToolGroups {
+            let inner = (group["hooks"] as? [[String: Any]]) ?? []
+            let tmwidCount = inner.filter {
+                SettingsInjector.isCurrentTmwidHook($0["command"] as? String ?? "")
+            }.count
+            XCTAssertEqual(tmwidCount, 1, "Each group should have exactly 1 tmwid hook after multiple installs")
+        }
+    }
+
+    func testUninstallRemovesGenericHooks() throws {
+        let tmp = makeTempDir()
+        let injector = SettingsInjector(paths: Paths(home: tmp))
+        try injector.install()
+        try injector.uninstall()
+        let settings = try injector.readSettings()
+        let hooks = (settings["hooks"] as? [String: Any]) ?? [:]
+        XCTAssertTrue(hooks.isEmpty, "All hooks should be removed after uninstall (no user hooks exist)")
+    }
+
     // MARK: - Helpers
 
     private func makeTempDir() -> String {
