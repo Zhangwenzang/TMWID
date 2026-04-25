@@ -62,7 +62,8 @@ public final class SettingsInjector {
         let fmt = ISO8601DateFormatter()
         fmt.formatOptions = [.withFullDate, .withTime]
         let ts = fmt.string(from: Date()).replacingOccurrences(of: ":", with: "-")
-        let dest = "\(paths.backupsDir)/settings-\(ts).json"
+        let suffix = String(format: "%04x", UInt16.random(in: 0...UInt16.max))
+        let dest = "\(paths.backupsDir)/settings-\(ts)-\(suffix).json"
         try FileManager.default.copyItem(atPath: paths.claudeSettings, toPath: dest)
         pruneBackups(keeping: 5)
     }
