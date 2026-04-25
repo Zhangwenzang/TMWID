@@ -69,4 +69,11 @@ final class SoundPlayerTests: XCTestCase {
         // Should return .done (one sound, not three)
         XCTAssertEqual(SoundPlayer.statusToPlay(previous: old, current: new), .done)
     }
+
+    func testPreOverrideAskTriggersSound() {
+        // Simulate: previous scan returned working, current scan returns ask (from .pre override)
+        let old = [session("a", .working)]
+        let new = [session("a", .ask)]
+        XCTAssertEqual(SoundPlayer.statusToPlay(previous: old, current: new), .ask)
+    }
 }
