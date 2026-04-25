@@ -17,16 +17,7 @@ public final class FrameAnimator: ObservableObject {
         self.prefix = prefix
         self.count = max(1, count)
         self.fps = fps
-        self.cachedImages = (0..<self.count).map { i in
-            let name = String(format: "%@-%03d", prefix, i + 1)
-            if let bundle = Bundle.tmwidResources,
-               let url = bundle.urlForImageResource(name),
-               let img = NSImage(contentsOf: url) {
-                return img
-            }
-            // Fallback: try loading from named
-            return NSImage(named: name) ?? NSImage()
-        }
+        self.cachedImages = Self.loadFrames(prefix: prefix, count: self.count)
     }
 
     public var currentFrameName: String { frameName(at: index) }
@@ -55,15 +46,42 @@ public final class FrameAnimator: ObservableObject {
         timer?.cancel()
         timer = nil
     }
-}
 
-extension Bundle {
-    /// The resource bundle for the Tmwid library target.
-    static let tmwidResources: Bundle? = {
+    private static func loadFrames(prefix: String, count: Int) -> [NSImage] {
+        let bundle = resourceBundle()
+        return (0..<count).map { i in
+            let name = String(format: "%@-%03d", prefix, i + 1)
+            // Try loading from xcassets directory structure in bundle
+            if let bundlePath = bundle?.resourcePath {
+                let pngPath = "\(bundlePath)/Assets.xcassets/\(name).imageset/\(name).png"
+                if let img = NSImage(contentsOfFile: pngPath) {
+                    return img
+                }
+            }
+            // Fallback: try bundle image resource
+            if let bundle = bundle,
+               let url = bundle.urlForImageResource(name),
+               let img = NSImage(contentsOf: url) {
+                return img
+            }
+            return NSImage()
+        }
+    }
+
+    private static func resourceBundle() -> Bundle? {
+        // SPM generates Tmwid_Tmwid.bundle next to the executable
+        let execURL = Bundle.main.executableURL ?? Bundle.main.bundleURL
+        let bundleName = "Tmwid_Tmwid.bundle"
+        // Check next to executable
+        let adjacentURL = execURL.deletingLastPathComponent().appendingPathComponent(bundleName)
+        if FileManager.default.fileExists(atPath: adjacentURL.path) {
+            return Bundle(url: adjacentURL)
+        }
+        // Fallback to Bundle.module (works in tests)
         #if SWIFT_PACKAGE
         return Bundle.module
         #else
         return Bundle.main
         #endif
-    }()
+    }
 }
