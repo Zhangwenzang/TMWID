@@ -45,4 +45,65 @@ final class StateFileWatcherTests: XCTestCase {
         wait(for: [expectation], timeout: 2.0)
         watcher.stop()
     }
+
+    // MARK: - Pre-tool threshold tests
+
+    func testScanIgnoresRecentPreFile() throws {
+        let tmp = NSTemporaryDirectory() + "tmwid-watch-\(UUID().uuidString)"
+        try FileManager.default.createDirectory(atPath: tmp, withIntermediateDirectories: true)
+        let json = #"{"sessionId":"a","status":"working","cwd":"","pid":1,"ts":1}"#
+        try json.write(toFile: "\(tmp)/a.json", atomically: true, encoding: .utf8)
+        let now = "\(Int(Date().timeIntervalSince1970))"
+        try now.write(toFile: "\(tmp)/a.pre", atomically: true, encoding: .utf8)
+
+        let watcher = StateFileWatcher(directory: tmp, preToolThreshold: 2.0)
+        let sessions = watcher.scan()
+        XCTAssertEqual(sessions.count, 1)
+        XCTAssertEqual(sessions[0].status, .working, "Recent .pre file should not override status")
+    }
+
+    func testScanOverridesToAskForOldPreFile() throws {
+        let tmp = NSTemporaryDirectory() + "tmwid-watch-\(UUID().uuidString)"
+        try FileManager.default.createDirectory(atPath: tmp, withIntermediateDirectories: true)
+        let json = #"{"sessionId":"a","status":"working","cwd":"/test","pid":1,"ts":1}"#
+        try json.write(toFile: "\(tmp)/a.json", atomically: true, encoding: .utf8)
+        let old = "\(Int(Date().timeIntervalSince1970) - 10)"
+        try old.write(toFile: "\(tmp)/a.pre", atomically: true, encoding: .utf8)
+
+        let watcher = StateFileWatcher(directory: tmp, preToolThreshold: 2.0)
+        let sessions = watcher.scan()
+        XCTAssertEqual(sessions.count, 1)
+        XCTAssertEqual(sessions[0].status, .ask, "Old .pre file should override status to .ask")
+        XCTAssertEqual(sessions[0].cwd, "/test", "Other fields should be preserved")
+    }
+
+    func testScanDoesNotDoubleOverrideAsk() throws {
+        let tmp = NSTemporaryDirectory() + "tmwid-watch-\(UUID().uuidString)"
+        try FileManager.default.createDirectory(atPath: tmp, withIntermediateDirectories: true)
+        let json = #"{"sessionId":"a","status":"ask","cwd":"","pid":1,"ts":1}"#
+        try json.write(toFile: "\(tmp)/a.json", atomically: true, encoding: .utf8)
+        let old = "\(Int(Date().timeIntervalSince1970) - 10)"
+        try old.write(toFile: "\(tmp)/a.pre", atomically: true, encoding: .utf8)
+
+        let watcher = StateFileWatcher(directory: tmp, preToolThreshold: 2.0)
+        let sessions = watcher.scan()
+        XCTAssertEqual(sessions[0].status, .ask)
+    }
+
+    func testScanWorksWithoutPreFiles() throws {
+        let tmp = NSTemporaryDirectory() + "tmwid-watch-\(UUID().uuidString)"
+        try FileManager.default.createDirectory(atPath: tmp, withIntermediateDirectories: true)
+        let json = #"{"sessionId":"a","status":"working","cwd":"","pid":1,"ts":1}"#
+        try json.write(toFile: "\(tmp)/a.json", atomically: true, encoding: .utf8)
+
+        let watcher = StateFileWatcher(directory: tmp)
+        let sessions = watcher.scan()
+        XCTAssertEqual(sessions.count, 1)
+        XCTAssertEqual(sessions[0].status, .working)
+    }
+
+    func testScanDefaultThreshold() {
+        let watcher = StateFileWatcher(directory: "/tmp")
+        XCTAssertEqual(watcher.preToolThreshold, 2.0, "Default threshold should be 2 seconds")
+    }
 }
