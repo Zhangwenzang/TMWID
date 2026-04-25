@@ -2,25 +2,52 @@ import SwiftUI
 
 struct BubbleContent: View {
     @ObservedObject var state: AppState
+    var onMinimize: (() -> Void)?
+    @State private var isHovered = false
+    @State private var isButtonHovered = false
 
     var body: some View {
-        HStack(spacing: 14) {
-            if state.workingCount > 0 {
-                StatusItemView(kind: .working, count: state.workingCount)
+        ZStack(alignment: .topTrailing) {
+            HStack(spacing: 14) {
+                if state.workingCount > 0 {
+                    StatusItemView(kind: .working, count: state.workingCount)
+                }
+                if state.askCount > 0 {
+                    StatusItemView(kind: .ask, count: state.askCount)
+                }
+                if state.doneCount > 0 {
+                    StatusItemView(kind: .done, count: state.doneCount)
+                }
             }
-            if state.askCount > 0 {
-                StatusItemView(kind: .ask, count: state.askCount)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+
+            // Minimize button - visible on hover
+            Button(action: { onMinimize?() }) {
+                Text("\u{2212}") // minus sign
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+                    .frame(width: 20, height: 20)
+                    .background(
+                        Circle()
+                            .fill(Color.white.opacity(isButtonHovered ? 0.25 : 0.15))
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                    )
             }
-            if state.doneCount > 0 {
-                StatusItemView(kind: .done, count: state.doneCount)
+            .buttonStyle(.plain)
+            .onHover { hovering in
+                isButtonHovered = hovering
             }
+            .opacity(isHovered ? 1 : 0)
+            .animation(.easeInOut(duration: 0.15), value: isHovered)
+            .padding(.top, 4)
+            .padding(.trailing, 4)
         }
-        .padding(10)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.25), radius: 12, y: 4)
+        .onHover { hovering in
+            isHovered = hovering
+        }
     }
 }
