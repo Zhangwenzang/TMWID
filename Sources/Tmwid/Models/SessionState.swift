@@ -1,19 +1,19 @@
 import Foundation
 
-struct SessionState: Codable, Equatable, Identifiable {
-    let sessionId: String
-    let status: StatusKind
-    let cwd: String
-    let pid: Int32
-    let ts: TimeInterval
+public struct SessionState: Codable, Equatable, Identifiable {
+    public let sessionId: String
+    public let status: StatusKind
+    public let cwd: String
+    public let pid: Int32
+    public let ts: TimeInterval
 
-    var id: String { sessionId }
+    public var id: String { sessionId }
 
     enum CodingKeys: String, CodingKey {
         case sessionId, status, cwd, pid, ts
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         sessionId = try c.decode(String.self, forKey: .sessionId)
         status = try c.decode(StatusKind.self, forKey: .status)
@@ -22,7 +22,7 @@ struct SessionState: Codable, Equatable, Identifiable {
         ts = try c.decode(TimeInterval.self, forKey: .ts)
     }
 
-    init(sessionId: String, status: StatusKind, cwd: String, pid: Int32, ts: TimeInterval) {
+    public init(sessionId: String, status: StatusKind, cwd: String, pid: Int32, ts: TimeInterval) {
         self.sessionId = sessionId
         self.status = status
         self.cwd = cwd

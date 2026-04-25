@@ -1,18 +1,18 @@
 import Foundation
 
-final class StateFileWatcher {
-    let directory: String
-    var onChange: ([SessionState]) -> Void = { _ in }
+public final class StateFileWatcher {
+    public let directory: String
+    public var onChange: ([SessionState]) -> Void = { _ in }
 
     private var source: DispatchSourceFileSystemObject?
     private var fd: Int32 = -1
     private let queue = DispatchQueue(label: "tmwid.watcher")
 
-    init(directory: String) {
+    public init(directory: String) {
         self.directory = directory
     }
 
-    func start() {
+    public func start() {
         try? FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
         fd = open(directory, O_EVTONLY)
         guard fd >= 0 else { return }
@@ -37,12 +37,12 @@ final class StateFileWatcher {
         DispatchQueue.main.async { self.onChange(initial) }
     }
 
-    func stop() {
+    public func stop() {
         source?.cancel()
         source = nil
     }
 
-    func scan() -> [SessionState] {
+    public func scan() -> [SessionState] {
         let fm = FileManager.default
         guard let files = try? fm.contentsOfDirectory(atPath: directory) else { return [] }
         var results: [SessionState] = []

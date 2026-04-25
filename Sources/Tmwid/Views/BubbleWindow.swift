@@ -2,15 +2,15 @@ import SwiftUI
 import AppKit
 
 @MainActor
-final class BubbleWindowController {
+public final class BubbleWindowController {
     private var window: NSWindow?
     private let state: AppState
 
-    init(state: AppState) {
+    public init(state: AppState) {
         self.state = state
     }
 
-    func showIfNeeded() {
+    public func showIfNeeded() {
         if state.isEmpty {
             hide()
             return
@@ -19,7 +19,7 @@ final class BubbleWindowController {
         window?.orderFrontRegardless()
     }
 
-    func hide() {
+    public func hide() {
         window?.orderOut(nil)
     }
 

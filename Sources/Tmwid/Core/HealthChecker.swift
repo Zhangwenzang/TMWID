@@ -1,13 +1,13 @@
 import Foundation
 
-final class HealthChecker {
-    let directory: String
-    let staleThreshold: TimeInterval
-    let processExists: (Int32) -> Bool
+public final class HealthChecker {
+    public let directory: String
+    public let staleThreshold: TimeInterval
+    public let processExists: (Int32) -> Bool
 
     private var timer: DispatchSourceTimer?
 
-    init(
+    public init(
         directory: String,
         staleThreshold: TimeInterval = 600,
         processExists: @escaping (Int32) -> Bool = HealthChecker.defaultProcessExists
@@ -17,11 +17,11 @@ final class HealthChecker {
         self.processExists = processExists
     }
 
-    static func defaultProcessExists(pid: Int32) -> Bool {
+    public static func defaultProcessExists(pid: Int32) -> Bool {
         kill(pid, 0) == 0 || errno != ESRCH
     }
 
-    func startPeriodic(interval: TimeInterval = 15) {
+    public func startPeriodic(interval: TimeInterval = 15) {
         let t = DispatchSource.makeTimerSource(queue: .global(qos: .utility))
         t.schedule(deadline: .now() + interval, repeating: interval)
         t.setEventHandler { [weak self] in self?.runOnce() }
@@ -29,12 +29,12 @@ final class HealthChecker {
         timer = t
     }
 
-    func stop() {
+    public func stop() {
         timer?.cancel()
         timer = nil
     }
 
-    func runOnce() {
+    public func runOnce() {
         let fm = FileManager.default
         guard let files = try? fm.contentsOfDirectory(atPath: directory) else { return }
         let now = Date().timeIntervalSince1970

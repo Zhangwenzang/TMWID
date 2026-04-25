@@ -31,23 +31,23 @@ enum HookTemplate {
     """
 }
 
-final class SettingsInjector {
-    typealias SettingsJSON = [String: Any]
+public final class SettingsInjector {
+    public typealias SettingsJSON = [String: Any]
 
-    let paths: Paths
-    init(paths: Paths) { self.paths = paths }
+    public let paths: Paths
+    public init(paths: Paths) { self.paths = paths }
 
-    static func isCurrentTmwidHook(_ command: String) -> Bool {
+    public static func isCurrentTmwidHook(_ command: String) -> Bool {
         command.hasPrefix(HookMarker.current)
     }
 
-    static func isLegacyTmwidHook(_ command: String) -> Bool {
+    public static func isLegacyTmwidHook(_ command: String) -> Bool {
         HookMarker.legacyPrefixes.contains { command.hasPrefix($0) }
     }
 
     // MARK: - Read & Backup
 
-    func readSettings() throws -> SettingsJSON {
+    public func readSettings() throws -> SettingsJSON {
         let url = URL(fileURLWithPath: paths.claudeSettings)
         guard FileManager.default.fileExists(atPath: url.path) else { return [:] }
         let data = try Data(contentsOf: url)
@@ -55,7 +55,7 @@ final class SettingsInjector {
         return json as? SettingsJSON ?? [:]
     }
 
-    func backupSettings() throws {
+    public func backupSettings() throws {
         guard FileManager.default.fileExists(atPath: paths.claudeSettings) else { return }
         try FileManager.default.createDirectory(
             atPath: paths.backupsDir, withIntermediateDirectories: true)
@@ -79,7 +79,7 @@ final class SettingsInjector {
 
     // MARK: - Install
 
-    func install() throws {
+    public func install() throws {
         try backupSettings()
         var settings = try readSettings()
         var hooks = (settings["hooks"] as? SettingsJSON) ?? [:]
@@ -108,7 +108,7 @@ final class SettingsInjector {
 
     // MARK: - Uninstall
 
-    func uninstall() throws {
+    public func uninstall() throws {
         try backupSettings()
         var settings = try readSettings()
         guard var hooks = settings["hooks"] as? SettingsJSON else { return }
