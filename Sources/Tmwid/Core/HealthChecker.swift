@@ -38,17 +38,30 @@ public final class HealthChecker {
         let fm = FileManager.default
         guard let files = try? fm.contentsOfDirectory(atPath: directory) else { return }
         let now = Date().timeIntervalSince1970
+
+        var validSessionIds: Set<String> = []
+
         for f in files where f.hasSuffix(".json") {
             let path = "\(directory)/\(f)"
             guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
                   let s = try? JSONDecoder().decode(SessionState.self, from: data)
             else { continue }
 
-            guard s.status == .working else { continue }
-            let isStale = (now - s.ts) > staleThreshold
             let isDead = !processExists(s.pid)
-            if isStale || isDead {
+            let isStale = s.status == .working && (now - s.ts) > staleThreshold
+            if isDead || isStale {
                 try? fm.removeItem(atPath: path)
+                try? fm.removeItem(atPath: "\(directory)/\(s.sessionId).pre")
+            } else {
+                validSessionIds.insert(s.sessionId)
+            }
+        }
+
+        // Remove orphaned .pre files (no matching .json)
+        for f in files where f.hasSuffix(".pre") {
+            let sid = String(f.dropLast(4))
+            if !validSessionIds.contains(sid) {
+                try? fm.removeItem(atPath: "\(directory)/\(f)")
             }
         }
     }
