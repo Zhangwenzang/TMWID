@@ -126,6 +126,30 @@ final class SettingsInjectorTests: XCTestCase {
         XCTAssertTrue(allCmds.contains { $0.contains("Glass.aiff") })
     }
 
+    // MARK: - Pre-tool marker script tests
+
+    func testPreMarkerScriptContainsMarker() {
+        XCTAssertTrue(HookTemplate.preMarkerScript.hasPrefix(HookMarker.current))
+    }
+
+    func testPreMarkerScriptWritesPreFile() {
+        XCTAssertTrue(HookTemplate.preMarkerScript.contains(".pre"))
+        XCTAssertTrue(HookTemplate.preMarkerScript.contains("date +%s"))
+    }
+
+    func testPostToolResetScriptContainsMarker() {
+        XCTAssertTrue(HookTemplate.postToolResetScript.hasPrefix(HookMarker.current))
+    }
+
+    func testPostToolResetScriptDeletesPreFile() {
+        XCTAssertTrue(HookTemplate.postToolResetScript.contains("rm -f"))
+        XCTAssertTrue(HookTemplate.postToolResetScript.contains(".pre"))
+    }
+
+    func testPostToolResetScriptWritesWorkingStatus() {
+        XCTAssertTrue(HookTemplate.postToolResetScript.contains("\"working\""))
+    }
+
     // MARK: - Helpers
 
     private func makeTempDir() -> String {

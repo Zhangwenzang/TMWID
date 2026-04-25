@@ -29,6 +29,30 @@ enum HookTemplate {
     [ -n "$sid" ] && rm -f "$HOME/.tmwid/state/$sid.json"
     exit 0
     """
+
+    static let preMarkerScript = """
+    \(HookMarker.current)
+    input=$(cat)
+    sid=$(printf '%s' "$input" | /usr/bin/jq -r '.session_id // empty')
+    [ -z "$sid" ] && exit 0
+    mkdir -p "$HOME/.tmwid/state"
+    printf '%d' "$(date +%s)" > "$HOME/.tmwid/state/$sid.pre"
+    exit 0
+    """
+
+    static let postToolResetScript = """
+    \(HookMarker.current)
+    input=$(cat)
+    sid=$(printf '%s' "$input" | /usr/bin/jq -r '.session_id // empty')
+    cwd=$(printf '%s' "$input" | /usr/bin/jq -r '.cwd // empty')
+    [ -z "$sid" ] && exit 0
+    dir="$HOME/.tmwid/state"
+    rm -f "$dir/$sid.pre"
+    tmp="$dir/$sid.json.tmp.$$"
+    printf '{"sessionId":"%s","status":"working","cwd":"%s","pid":%d,"ts":%d}\\n' \
+      "$sid" "$cwd" "$PPID" "$(date +%s)" > "$tmp" && mv "$tmp" "$dir/$sid.json"
+    exit 0
+    """
 }
 
 public final class SettingsInjector {
@@ -89,6 +113,8 @@ public final class SettingsInjector {
             ("UserPromptSubmit", nil, "working"),
             ("Stop", nil, "done"),
             ("PreToolUse", "AskUserQuestion", "ask"),
+            ("PostToolUse", "AskUserQuestion", "working"),
+            ("PostToolUse", nil, "working"),
             ("Notification", "permission_prompt", "ask"),
             ("SessionEnd", nil, nil),  // cleanup
         ]
