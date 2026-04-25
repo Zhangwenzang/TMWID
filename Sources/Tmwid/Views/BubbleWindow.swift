@@ -38,6 +38,7 @@ public final class BubbleWindowController {
         w.backgroundColor = .clear
         w.hasShadow = false
         w.level = .floating
+        w.isMovableByWindowBackground = true
         w.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         w.contentView = host
         if let screen = NSScreen.main {

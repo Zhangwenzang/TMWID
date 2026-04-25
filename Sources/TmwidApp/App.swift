@@ -20,26 +20,13 @@ struct TmwidApp: App {
                 onUninstall: { try? injector?.uninstall() }
             )
         } label: {
-            menuBarLabel
+            MenuBarLabel(state: state)
+                .task { setupOnce() }
         }
         .menuBarExtraStyle(.menu)
         .onChange(of: state.sessions) { _ in
             bubble?.showIfNeeded()
         }
-    }
-
-    private var menuBarLabel: some View {
-        Text(labelText)
-            .task { setupOnce() }
-    }
-
-    private var labelText: String {
-        if state.isEmpty { return "\u{1F4A4}" }
-        var parts: [String] = []
-        if state.workingCount > 0 { parts.append("\u{2699}\(state.workingCount)") }
-        if state.askCount > 0     { parts.append("\u{2753}\(state.askCount)") }
-        if state.doneCount > 0    { parts.append("\u{2713}\(state.doneCount)") }
-        return parts.joined(separator: " ")
     }
 
     private func setupOnce() {

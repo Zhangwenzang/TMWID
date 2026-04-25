@@ -1,31 +1,35 @@
 import SwiftUI
 
-struct StatusItemView: View {
+public struct StatusItemView: View {
     let kind: StatusKind
     let count: Int
+    let size: CGFloat
     @StateObject private var animator: FrameAnimator
 
-    init(kind: StatusKind, count: Int) {
+    public init(kind: StatusKind, count: Int, size: CGFloat = 48) {
         self.kind = kind
         self.count = count
+        self.size = size
         let cfg = Self.config(for: kind)
         _animator = StateObject(wrappedValue: FrameAnimator(
             prefix: cfg.prefix, count: cfg.count, fps: cfg.fps))
     }
 
-    var body: some View {
-        VStack(spacing: 4) {
-            Image(animator.currentFrameName, bundle: .module)
+    public var body: some View {
+        VStack(spacing: size > 24 ? 4 : 2) {
+            Image(nsImage: animator.currentImage)
                 .resizable()
                 .interpolation(.none)
-                .frame(width: 48, height: 48)
+                .frame(width: size, height: size)
                 .background(Color.white)
-                .cornerRadius(6)
-            Text("\(count)")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.4), radius: 1, y: 1)
-                .monospacedDigit()
+                .cornerRadius(size > 24 ? 6 : 3)
+            if size > 24 {
+                Text("\(count)")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.4), radius: 1, y: 1)
+                    .monospacedDigit()
+            }
         }
         .onAppear { animator.start() }
         .onDisappear { animator.stop() }
