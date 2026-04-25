@@ -1,5 +1,6 @@
 import SwiftUI
 import Tmwid
+import AppKit
 
 @main
 struct TmwidApp: App {
@@ -13,6 +14,19 @@ struct TmwidApp: App {
     @State private var sound: SoundPlayer?
 
     private let paths = Paths()
+
+    init() {
+        // Prevent duplicate instances
+        let dominated = NSRunningApplication.runningApplications(
+            withBundleIdentifier: Bundle.main.bundleIdentifier ?? "com.tmwid.app"
+        ).filter { $0 != NSRunningApplication.current }
+
+        if let existing = dominated.first {
+            existing.activate()
+            // Exit immediately — another instance is already running
+            Darwin.exit(0)
+        }
+    }
 
     var body: some Scene {
         MenuBarExtra {
@@ -68,6 +82,8 @@ struct TmwidApp: App {
         }
         bubble = b
 
-        sound = SoundPlayer()
+        let s = SoundPlayer()
+        s.playIfNeeded(currentSessions: state.sessions, enabled: false)
+        sound = s
     }
 }

@@ -7,6 +7,7 @@ public final class BubbleWindowController {
     private var hostingView: NSHostingView<BubbleContent>?
     private let state: AppState
     private var lastFrame: NSRect = .zero
+    private var isAnimating = false
 
     public var onMinimize: (() -> Void)?
 
@@ -19,6 +20,7 @@ public final class BubbleWindowController {
     }
 
     public func showIfNeeded() {
+        guard !isAnimating else { return }
         if state.isEmpty {
             hide()
             return
@@ -35,7 +37,8 @@ public final class BubbleWindowController {
     }
 
     public func minimizeToMenuBar() {
-        guard let w = window, w.isVisible else { return }
+        guard let w = window, w.isVisible, !isAnimating else { return }
+        isAnimating = true
         lastFrame = w.frame
 
         // Target: top-right corner of the screen (menu bar area)
@@ -54,11 +57,10 @@ public final class BubbleWindowController {
             w.animator().setFrame(target, display: true)
             w.animator().alphaValue = 0
         }, completionHandler: { [weak self] in
-            Task { @MainActor in
-                w.orderOut(nil)
-                w.alphaValue = 1
-                self?.onMinimize?()
-            }
+            w.orderOut(nil)
+            w.alphaValue = 1
+            self?.isAnimating = false
+            self?.onMinimize?()
         })
     }
 
@@ -141,7 +143,7 @@ public final class BubbleWindowController {
         if let screen = NSScreen.main {
             let margin: CGFloat = 20
             let x = screen.visibleFrame.maxX - size.width - margin
-            let y = screen.visibleFrame.minY + margin
+            let y = screen.visibleFrame.maxY - size.height - margin
             w.setFrameOrigin(NSPoint(x: x, y: y))
         }
 
