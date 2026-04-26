@@ -1,16 +1,48 @@
 import AppKit
 
+/// Returns the resource bundle, trying multiple lookup strategies:
+/// 1. Next to executable (packaged .app with bundle in Contents/MacOS/)
+/// 2. Contents/Resources/ (standard .app layout)
+/// 3. Bundle.module (SPM tests and dev builds)
+@MainActor
+private func tmwidResourceBundle() -> Bundle? {
+    let execURL = Bundle.main.executableURL ?? Bundle.main.bundleURL
+    let bundleName = "Tmwid_Tmwid.bundle"
+
+    // Next to executable
+    let adjacentURL = execURL.deletingLastPathComponent().appendingPathComponent(bundleName)
+    if FileManager.default.fileExists(atPath: adjacentURL.path) {
+        return Bundle(url: adjacentURL)
+    }
+
+    // Contents/Resources/
+    let resourcesURL = execURL.deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .appendingPathComponent("Resources")
+        .appendingPathComponent(bundleName)
+    if FileManager.default.fileExists(atPath: resourcesURL.path) {
+        return Bundle(url: resourcesURL)
+    }
+
+    #if SWIFT_PACKAGE
+    return Bundle.module
+    #else
+    return Bundle.main
+    #endif
+}
+
 @MainActor
 public final class SoundPlayer {
     private var sounds: [StatusKind: NSSound] = [:]
     private var previousSessions: [SessionState] = []
 
     public init() {
-        if let url = Bundle.module.url(forResource: "Glass", withExtension: "aiff"),
+        let bundle = tmwidResourceBundle()
+        if let url = bundle?.url(forResource: "Glass", withExtension: "aiff"),
            let sound = NSSound(contentsOf: url, byReference: false) {
             sounds[.done] = sound
         }
-        if let url = Bundle.module.url(forResource: "Hero", withExtension: "aiff"),
+        if let url = bundle?.url(forResource: "Hero", withExtension: "aiff"),
            let sound = NSSound(contentsOf: url, byReference: false) {
             sounds[.ask] = sound
         }

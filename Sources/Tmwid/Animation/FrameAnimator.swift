@@ -72,12 +72,23 @@ public final class FrameAnimator: ObservableObject {
         // SPM generates Tmwid_Tmwid.bundle next to the executable
         let execURL = Bundle.main.executableURL ?? Bundle.main.bundleURL
         let bundleName = "Tmwid_Tmwid.bundle"
-        // Check next to executable
+
+        // Check next to executable (packaged .app)
         let adjacentURL = execURL.deletingLastPathComponent().appendingPathComponent(bundleName)
         if FileManager.default.fileExists(atPath: adjacentURL.path) {
             return Bundle(url: adjacentURL)
         }
-        // Fallback to Bundle.module (works in tests)
+
+        // Check Contents/Resources/ (standard .app layout)
+        let resourcesURL = execURL.deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Resources")
+            .appendingPathComponent(bundleName)
+        if FileManager.default.fileExists(atPath: resourcesURL.path) {
+            return Bundle(url: resourcesURL)
+        }
+
+        // Fallback to Bundle.module (works in tests and dev builds)
         #if SWIFT_PACKAGE
         return Bundle.module
         #else
