@@ -20,9 +20,21 @@ TMWID 常驻菜单栏，自动发现并追踪所有活跃的 Claude Code 会话 
 
 ### 遇到"Tmwid.app 已损坏，无法打开"？
 
-这不是真的损坏，是 macOS Gatekeeper 拦截了未公证的应用。右键点击 Tmwid.app → **打开** → 在弹窗中点 **"仍要打开"** 即可。
+这是 macOS Gatekeeper 拦截了未公证的应用，不是真的损坏。打开终端执行：
 
-或者：系统设置 → 隐私与安全性 → 拉到最下方，找到被阻止的 Tmwid.app → 点 **"仍要打开"**。
+```bash
+sudo xattr -rd com.apple.quarantine /Applications/Tmwid.app
+```
+
+输入登录密码后回车，之后双击即可正常打开。
+
+如果上述命令无效，可以试着先卸载再重装：
+
+```bash
+sudo rm -rf /Applications/Tmwid.app
+# 重新从 DMG 复制
+sudo xattr -rd com.apple.quarantine /Applications/Tmwid.app
+```
 
 ## 系统要求
 
