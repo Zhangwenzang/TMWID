@@ -38,7 +38,7 @@ sudo xattr -rd com.apple.quarantine /Applications/Tmwid.app
 
 ## 状态预览
 
-![状态演示](assets/demo-states.gif)
+<video src="assets/demo-states.mp4" loop autoplay muted playsinline></video>
 
 ## 系统要求
 
