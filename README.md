@@ -36,6 +36,10 @@ sudo rm -rf /Applications/Tmwid.app
 sudo xattr -rd com.apple.quarantine /Applications/Tmwid.app
 ```
 
+## 状态预览
+
+![状态演示](assets/demo-states.gif)
+
 ## 系统要求
 
 - macOS 13 (Ventura) 或更高版本
