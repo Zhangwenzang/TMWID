@@ -38,7 +38,7 @@ sudo xattr -rd com.apple.quarantine /Applications/Tmwid.app
 
 ## 状态预览
 
-https://github.com/Zhangwenzang/TMWID/raw/main/assets/demo-states.mp4
+![状态演示](https://github.com/Zhangwenzang/TMWID/raw/main/assets/demo-states.mp4)
 
 ## 系统要求
 
