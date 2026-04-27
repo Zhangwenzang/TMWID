@@ -58,6 +58,10 @@ sudo xattr -rd com.apple.quarantine /Applications/Tmwid.app
 2. 删除 `/Applications/Tmwid.app`
 3. `rm -rf ~/.tmwid`
 
+## 致谢
+
+感谢 [**@BrightHao**](https://github.com/BrightHao) 提供 Intel 芯片适配版本，让老 Mac 用户也能无障碍使用 Tmwid。
+
 ## License
 
 MIT
