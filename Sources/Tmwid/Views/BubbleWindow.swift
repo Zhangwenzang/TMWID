@@ -2,35 +2,24 @@ import SwiftUI
 import AppKit
 
 @MainActor
-public final class BubbleWindowController: NSObject {
+public final class BubbleWindowController {
     private var window: NSWindow?
     private var hostingView: NSHostingView<BubbleContent>?
     private let state: AppState
-    private let activator: SessionActivator
     private var lastFrame: NSRect = .zero
     private var isAnimating = false
 
     public var onMinimize: (() -> Void)?
+    public var onStatusTap: ((StatusKind) -> Void)?
     public var onSessionTap: ((SessionState) -> Void)?
+    public var activator: SessionActivator?
 
     public var isVisible: Bool {
         window?.isVisible ?? false
     }
 
-    public init(state: AppState, activator: SessionActivator) {
+    public init(state: AppState) {
         self.state = state
-        self.activator = activator
-        super.init()
-    }
-
-    deinit {
-        hostingView?.removeObserver(self, forKeyPath: "frame")
-    }
-
-    public override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-        if keyPath == "frame" {
-            updateSize()
-        }
     }
 
     public func showIfNeeded() {
@@ -119,7 +108,7 @@ public final class BubbleWindowController: NSObject {
 
     private func updateSize() {
         guard let host = hostingView, let w = window else { return }
-
+        host.layoutSubtreeIfNeeded()
         let fitting = host.fittingSize
         let newSize = NSSize(width: max(fitting.width, 80), height: max(fitting.height, 60))
 
@@ -127,43 +116,31 @@ public final class BubbleWindowController: NSObject {
         let dx = newSize.width - frame.width
         frame.origin.x -= dx
         frame.size = newSize
-        w.setFrame(frame, display: true, animate: true)
+        w.setFrame(frame, display: true, animate: false)
     }
 
     private func makeWindow() {
-        let content = BubbleContent(
-            state: state,
-            activator: activator,
-            onMinimize: { [weak self] in
-                self?.minimizeToMenuBar()
-            },
-            onSessionTap: { [weak self] session in
-                self?.onSessionTap?(session)
-            },
-            onHover: { [weak self] in
-                NSApp.activate(ignoringOtherApps: true)
-                self?.window?.makeKey()
-            }
-        )
+        let content = BubbleContent(state: state, onMinimize: { [weak self] in
+            self?.minimizeToMenuBar()
+        }, onStatusTap: { [weak self] kind in
+            self?.onStatusTap?(kind)
+        }, onSessionTap: { [weak self] session in
+            self?.onSessionTap?(session)
+        }, onHover: { [weak self] in
+            NSApp.activate(ignoringOtherApps: true)
+            self?.window?.makeKey()
+        }, activator: activator)
         let host = NSHostingView(rootView: content)
-        host.translatesAutoresizingMaskIntoConstraints = false
 
         let fitting = host.fittingSize
         let size = NSSize(width: max(fitting.width, 80), height: max(fitting.height, 60))
+        host.frame = NSRect(origin: .zero, size: size)
+        host.autoresizingMask = [.width, .height]
 
         // Wrap in AcceptsFirstMouseView so clicks work immediately
         let wrapper = AcceptsFirstMouseView(frame: NSRect(origin: .zero, size: size))
+        wrapper.autoresizingMask = [.width, .height]
         wrapper.addSubview(host)
-
-        NSLayoutConstraint.activate([
-            host.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
-            host.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor),
-            host.topAnchor.constraint(equalTo: wrapper.topAnchor),
-            host.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor)
-        ])
-
-        // Observe host size changes
-        host.addObserver(self, forKeyPath: "frame", options: [.new], context: nil)
 
         // Use .titled (not .borderless) so NSVisualEffectView can blur
         // content behind the window. Hide all the chrome to keep it bubble-like.
