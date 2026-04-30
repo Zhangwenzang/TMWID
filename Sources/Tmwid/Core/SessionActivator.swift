@@ -9,6 +9,10 @@ public final class SessionActivator {
         app.activate(options: .activateIgnoringOtherApps)
     }
 
+    public func getAppIcon(for pid: Int32) -> NSImage? {
+        return findApp(for: pid)?.icon
+    }
+
     private func findApp(for pid: Int32) -> NSRunningApplication? {
         var current = pid
         for _ in 0..<10 {

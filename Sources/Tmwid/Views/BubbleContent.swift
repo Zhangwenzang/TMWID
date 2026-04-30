@@ -24,33 +24,44 @@ struct VisualEffectBlur: NSViewRepresentable {
 
 struct BubbleContent: View {
     @ObservedObject var state: AppState
+    let activator: SessionActivator
     var onMinimize: (() -> Void)?
-    var onStatusTap: ((StatusKind) -> Void)?
+    var onSessionTap: ((SessionState) -> Void)?
     var onHover: (() -> Void)?
     @State private var isHovered = false
     @State private var isButtonHovered = false
+    @State private var hoveredStatus: StatusKind?
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            HStack(spacing: 14) {
-                if state.workingCount > 0 {
-                    StatusItemView(kind: .working, count: state.workingCount) {
-                        onStatusTap?(.working)
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 8) {
+                    if state.workingCount > 0 {
+                        StatusItemView(kind: .working, count: state.workingCount, onHover: { hovering in
+                            if hovering { hoveredStatus = .working }
+                        })
+                    }
+                    if state.askCount > 0 {
+                        StatusItemView(kind: .ask, count: state.askCount, onHover: { hovering in
+                            if hovering { hoveredStatus = .ask }
+                        })
+                    }
+                    if state.doneCount > 0 {
+                        StatusItemView(kind: .done, count: state.doneCount, onHover: { hovering in
+                            if hovering { hoveredStatus = .done }
+                        })
                     }
                 }
-                if state.askCount > 0 {
-                    StatusItemView(kind: .ask, count: state.askCount) {
-                        onStatusTap?(.ask)
-                    }
-                }
-                if state.doneCount > 0 {
-                    StatusItemView(kind: .done, count: state.doneCount) {
-                        onStatusTap?(.done)
-                    }
+
+                if let status = hoveredStatus {
+                    SessionListView(
+                        sessions: state.sessions(for: status),
+                        activator: activator,
+                        onSessionTap: onSessionTap
+                    )
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(14)
             .background(
                 ZStack {
                     VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
@@ -87,7 +98,11 @@ struct BubbleContent: View {
         }
         .onHover { hovering in
             isHovered = hovering
-            if hovering { onHover?() }
+            if hovering {
+                onHover?()
+            } else {
+                hoveredStatus = nil
+            }
         }
     }
 }
