@@ -1,5 +1,9 @@
 import Foundation
 
+enum CodeXInjectorError: Error {
+    case hooksFileExists
+}
+
 public final class CodeXInjector {
     public let paths: Paths
 
@@ -33,5 +37,39 @@ public final class CodeXInjector {
             let existing = try String(contentsOfFile: tomlPath, encoding: .utf8)
             try (existing + append).write(toFile: tomlPath, atomically: true, encoding: .utf8)
         }
+    }
+
+    public func writeHooksJSON() throws {
+        if FileManager.default.fileExists(atPath: paths.codexHooksJSON) {
+            throw CodeXInjectorError.hooksFileExists
+        }
+
+        try FileManager.default.createDirectory(
+            atPath: paths.codexConfigDir,
+            withIntermediateDirectories: true
+        )
+
+        let hooksStructure: [String: Any] = [
+            "hooks": [
+                "UserPromptSubmit": [
+                    ["hooks": [["type": "command", "command": HookTemplate.scriptForStatus("working")]]]
+                ],
+                "Stop": [
+                    ["hooks": [["type": "command", "command": HookTemplate.scriptForStatus("done")]]]
+                ],
+                "PermissionRequest": [
+                    ["hooks": [["type": "command", "command": HookTemplate.scriptForStatus("ask")]]]
+                ]
+            ]
+        ]
+
+        let data = try JSONSerialization.data(
+            withJSONObject: hooksStructure,
+            options: [.prettyPrinted, .sortedKeys]
+        )
+
+        let tmp = paths.codexHooksJSON + ".tmp.\(getpid())"
+        try data.write(to: URL(fileURLWithPath: tmp), options: .atomic)
+        _ = rename(tmp, paths.codexHooksJSON)
     }
 }

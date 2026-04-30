@@ -34,6 +34,34 @@ final class CodeXInjectorTests: XCTestCase {
         XCTAssertEqual(firstContent, secondContent, "重复调用不应修改文件")
     }
 
+    func testWriteHooksJSONCreatesFile() throws {
+        let tmp = makeTempDir()
+        let injector = CodeXInjector(paths: Paths(home: tmp))
+        try injector.writeHooksJSON()
+
+        let hooksPath = "\(tmp)/.codex/hooks.json"
+        XCTAssertTrue(FileManager.default.fileExists(atPath: hooksPath))
+
+        let data = try Data(contentsOf: URL(fileURLWithPath: hooksPath))
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let hooks = json?["hooks"] as? [String: Any]
+
+        XCTAssertNotNil(hooks?["UserPromptSubmit"])
+        XCTAssertNotNil(hooks?["Stop"])
+        XCTAssertNotNil(hooks?["PermissionRequest"])
+    }
+
+    func testWriteHooksJSONThrowsIfExists() throws {
+        let tmp = makeTempDir()
+        try FileManager.default.createDirectory(atPath: "\(tmp)/.codex", withIntermediateDirectories: true)
+        let existing = #"{"hooks":{"Custom":[{"hooks":[{"command":"echo test"}]}]}}"#
+        try existing.write(toFile: "\(tmp)/.codex/hooks.json", atomically: true, encoding: .utf8)
+
+        let injector = CodeXInjector(paths: Paths(home: tmp))
+
+        XCTAssertThrowsError(try injector.writeHooksJSON())
+    }
+
     private func makeTempDir() -> String {
         let dir = NSTemporaryDirectory() + "tmwid-codex-test-\(UUID().uuidString)"
         try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
