@@ -6,13 +6,14 @@ final class SettingsInjectorTests: XCTestCase {
     // MARK: - Marker tests (Task 4)
 
     func testIsCurrentTmwidHook() {
-        XCTAssertTrue(SettingsInjector.isCurrentTmwidHook("# tmwid-v1-hook\necho hi"))
+        XCTAssertTrue(SettingsInjector.isCurrentTmwidHook("# tmwid-v2-hook\necho hi"))
         XCTAssertFalse(SettingsInjector.isCurrentTmwidHook("afplay /System/Library/Sounds/Glass.aiff"))
     }
 
     func testIsLegacyTmwidHook() {
         XCTAssertTrue(SettingsInjector.isLegacyTmwidHook("# tmwid-v0-hook\necho hi"))
-        XCTAssertFalse(SettingsInjector.isLegacyTmwidHook("# tmwid-v1-hook\necho hi"))
+        XCTAssertTrue(SettingsInjector.isLegacyTmwidHook("# tmwid-v1-hook\necho hi"))
+        XCTAssertFalse(SettingsInjector.isLegacyTmwidHook("# tmwid-v2-hook\necho hi"))
     }
 
     // MARK: - Read tests (Task 5)

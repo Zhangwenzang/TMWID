@@ -1,8 +1,8 @@
 import Foundation
 
 enum HookMarker {
-    static let current = "# tmwid-v1-hook"
-    static let legacyPrefixes = ["# tmwid-v0-hook"]
+    static let current = "# tmwid-v2-hook"
+    static let legacyPrefixes = ["# tmwid-v0-hook", "# tmwid-v1-hook"]
 }
 
 enum HookTemplate {
@@ -51,6 +51,25 @@ enum HookTemplate {
     tmp="$dir/$sid.json.tmp.$$"
     printf '{"sessionId":"%s","status":"working","cwd":"%s","pid":%d,"ts":%d}\\n' \
       "$sid" "$cwd" "$PPID" "$(date +%s)" > "$tmp" && mv "$tmp" "$dir/$sid.json"
+    exit 0
+    """
+
+    static let errorScript = """
+    \(HookMarker.current)
+    input=$(cat)
+    sid=$(printf '%s' "$input" | /usr/bin/jq -r '.session_id // empty')
+    cwd=$(printf '%s' "$input" | /usr/bin/jq -r '.cwd // empty')
+    error=$(printf '%s' "$input" | /usr/bin/jq -r '.error // empty')
+    [ -z "$sid" ] && exit 0
+    case "$error" in
+      *rate*limit*|*quota*|*429*|*503*|*timeout*|*network*|*connection*)
+        dir="$HOME/.tmwid/state"
+        mkdir -p "$dir"
+        tmp="$dir/$sid.json.tmp.$$"
+        printf '{"sessionId":"%s","status":"apiErr","cwd":"%s","pid":%d,"ts":%d}\\n' \
+          "$sid" "$cwd" "$PPID" "$(date +%s)" > "$tmp" && mv "$tmp" "$dir/$sid.json"
+        ;;
+    esac
     exit 0
     """
 }
@@ -117,6 +136,7 @@ public final class SettingsInjector {
             ("PostToolUse", "AskUserQuestion", HookTemplate.scriptForStatus("working")),
             ("PostToolUse", nil, HookTemplate.postToolResetScript),
             ("Notification", "permission_prompt", HookTemplate.scriptForStatus("ask")),
+            ("Notification", "error", HookTemplate.errorScript),
             ("SessionEnd", nil, HookTemplate.cleanupScript),
         ]
 

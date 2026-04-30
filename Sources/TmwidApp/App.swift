@@ -11,6 +11,7 @@ struct TmwidApp: App {
     @State private var health: HealthChecker?
     @State private var bubble: BubbleWindowController?
     @State private var injector: SettingsInjector?
+    @State private var codexInjector: CodeXInjector?
     @State private var sound: SoundPlayer?
     @State private var discovery: SessionDiscovery?
     @State private var activator: SessionActivator?
@@ -36,6 +37,7 @@ struct TmwidApp: App {
                 state: state,
                 onQuit: {
                     try? injector?.uninstall()
+                    try? codexInjector?.uninstall()
                     NSApplication.shared.terminate(nil)
                 },
                 onBubbleToggle: { enabled in
@@ -66,6 +68,13 @@ struct TmwidApp: App {
         let inj = SettingsInjector(paths: paths)
         try? inj.install()
         injector = inj
+
+        let codexDir = "\(paths.home)/.codex"
+        if FileManager.default.fileExists(atPath: codexDir) {
+            let codexInj = CodeXInjector(paths: paths)
+            try? codexInj.install()
+            codexInjector = codexInj
+        }
 
         let w = StateFileWatcher(directory: paths.stateDir)
         w.onChange = { sessions in

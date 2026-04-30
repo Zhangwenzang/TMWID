@@ -46,10 +46,14 @@ public final class SoundPlayer {
            let sound = NSSound(contentsOf: url, byReference: false) {
             sounds[.ask] = sound
         }
+        if let url = bundle?.url(forResource: "Basso", withExtension: "aiff"),
+           let sound = NSSound(contentsOf: url, byReference: false) {
+            sounds[.apiErr] = sound
+        }
     }
 
     /// Pure function: determines which status sound to play given a session diff.
-    /// Returns nil if no sound should play. Prioritizes ask > done.
+    /// Returns nil if no sound should play. Prioritizes ask > apiErr > done.
     public static func statusToPlay(
         previous: [SessionState],
         current: [SessionState]
@@ -66,8 +70,9 @@ public final class SoundPlayer {
                 }
             }
         }
-        // Priority: ask > done
+        // Priority: ask > apiErr > done
         if changed.contains(.ask) { return .ask }
+        if changed.contains(.apiErr) { return .apiErr }
         if changed.contains(.done) { return .done }
         return nil
     }

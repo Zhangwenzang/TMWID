@@ -44,6 +44,7 @@ public struct StatusItemView: View {
         case .working: return ("working", 14, 10)
         case .done:    return ("done", 10, 6)
         case .ask:     return ("ask", 12, 8)
+        case .apiErr:  return ("apierr", 50, 12)
         }
     }
 }
