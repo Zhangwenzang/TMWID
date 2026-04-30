@@ -48,9 +48,9 @@ struct TmwidApp: App {
                     }
                 }
             )
+            .onAppear { setupOnce() }
         } label: {
             MenuBarLabel(state: state)
-                .task { setupOnce() }
         }
         .menuBarExtraStyle(.menu)
         .onChange(of: state.sessions) { _ in
@@ -90,14 +90,12 @@ struct TmwidApp: App {
         let act = SessionActivator()
         activator = act
 
-        let b = BubbleWindowController(state: state)
+        let b = BubbleWindowController(state: state, activator: act)
         b.onMinimize = {
             bubbleEnabled = false
         }
-        b.onStatusTap = { kind in
-            if let session = state.sessions(for: kind).first {
-                act.activate(session: session)
-            }
+        b.onSessionTap = { session in
+            act.activate(session: session)
         }
         bubble = b
 
