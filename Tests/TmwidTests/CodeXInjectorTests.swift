@@ -117,6 +117,33 @@ final class CodeXInjectorTests: XCTestCase {
         XCTAssertEqual(firstHooksContent, secondHooksContent, "重复 install 不应修改 hooks.json")
     }
 
+    func testCodeXAndClaudeCodeCoexist() throws {
+        let tmp = makeTempDir()
+
+        let claudeInj = SettingsInjector(paths: Paths(home: tmp))
+        try claudeInj.install()
+
+        let codexInj = CodeXInjector(paths: Paths(home: tmp))
+        try codexInj.install()
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(tmp)/.claude/settings.json"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(tmp)/.codex/hooks.json"))
+    }
+
+    func testUninstallOneDoesNotAffectOther() throws {
+        let tmp = makeTempDir()
+
+        let claudeInj = SettingsInjector(paths: Paths(home: tmp))
+        try claudeInj.install()
+
+        let codexInj = CodeXInjector(paths: Paths(home: tmp))
+        try codexInj.install()
+
+        try codexInj.uninstall()
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(tmp)/.claude/settings.json"))
+    }
+
     private func makeTempDir() -> String {
         let dir = NSTemporaryDirectory() + "tmwid-codex-test-\(UUID().uuidString)"
         try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
