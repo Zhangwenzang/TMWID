@@ -8,6 +8,7 @@ public final class AppState: ObservableObject {
     public var workingCount: Int { sessions.filter { $0.status == .working }.count }
     public var doneCount: Int { sessions.filter { $0.status == .done }.count }
     public var askCount: Int { sessions.filter { $0.status == .ask }.count }
+    public var apiErrCount: Int { sessions.filter { $0.status == .apiErr }.count }
     public var isEmpty: Bool { sessions.isEmpty }
 
     public init() {}

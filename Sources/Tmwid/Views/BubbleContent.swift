@@ -24,44 +24,64 @@ struct VisualEffectBlur: NSViewRepresentable {
 
 struct BubbleContent: View {
     @ObservedObject var state: AppState
-    let activator: SessionActivator
     var onMinimize: (() -> Void)?
+    var onStatusTap: ((StatusKind) -> Void)?
     var onSessionTap: ((SessionState) -> Void)?
     var onHover: (() -> Void)?
+    var activator: SessionActivator?
     @State private var isHovered = false
     @State private var isButtonHovered = false
-    @State private var hoveredStatus: StatusKind?
+    @State private var expandedStatus: StatusKind?
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 8) {
+            VStack(spacing: 0) {
+                HStack(spacing: 14) {
                     if state.workingCount > 0 {
-                        StatusItemView(kind: .working, count: state.workingCount, onHover: { hovering in
-                            if hovering { hoveredStatus = .working }
+                        StatusItemView(kind: .working, count: state.workingCount, onTap: {
+                            onStatusTap?(.working)
+                        }, onHover: { hovering in
+                            expandedStatus = hovering ? .working : nil
                         })
                     }
                     if state.askCount > 0 {
-                        StatusItemView(kind: .ask, count: state.askCount, onHover: { hovering in
-                            if hovering { hoveredStatus = .ask }
+                        StatusItemView(kind: .ask, count: state.askCount, onTap: {
+                            onStatusTap?(.ask)
+                        }, onHover: { hovering in
+                            expandedStatus = hovering ? .ask : nil
                         })
                     }
                     if state.doneCount > 0 {
-                        StatusItemView(kind: .done, count: state.doneCount, onHover: { hovering in
-                            if hovering { hoveredStatus = .done }
+                        StatusItemView(kind: .done, count: state.doneCount, onTap: {
+                            onStatusTap?(.done)
+                        }, onHover: { hovering in
+                            expandedStatus = hovering ? .done : nil
+                        })
+                    }
+                    if state.apiErrCount > 0 {
+                        StatusItemView(kind: .apiErr, count: state.apiErrCount, onTap: {
+                            onStatusTap?(.apiErr)
+                        }, onHover: { hovering in
+                            expandedStatus = hovering ? .apiErr : nil
                         })
                     }
                 }
 
-                if let status = hoveredStatus {
+                if let status = expandedStatus, let activator = activator {
+                    Divider()
+                        .background(Color.white.opacity(0.1))
+                        .padding(.top, 10)
+
                     SessionListView(
                         sessions: state.sessions(for: status),
                         activator: activator,
-                        onSessionTap: onSessionTap
+                        onTap: { session in onSessionTap?(session) }
                     )
                 }
             }
-            .padding(14)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(width: expandedStatus != nil ? 180 : nil)
             .background(
                 ZStack {
                     VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
@@ -73,6 +93,7 @@ struct BubbleContent: View {
                     .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .animation(.easeInOut(duration: 0.2), value: expandedStatus)
 
             // Minimize button — top-right of the bubble
             Button(action: { onMinimize?() }) {
@@ -98,11 +119,8 @@ struct BubbleContent: View {
         }
         .onHover { hovering in
             isHovered = hovering
-            if hovering {
-                onHover?()
-            } else {
-                hoveredStatus = nil
-            }
+            if hovering { onHover?() }
+            if !hovering { expandedStatus = nil }
         }
     }
 }
