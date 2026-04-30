@@ -75,4 +75,13 @@ public final class CodeXInjector {
             throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno))
         }
     }
+
+    public func install() throws {
+        try enableHooksFeature()
+        try writeHooksJSON()
+    }
+
+    public func uninstall() throws {
+        try? FileManager.default.removeItem(atPath: paths.codexHooksJSON)
+    }
 }

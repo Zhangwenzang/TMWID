@@ -86,6 +86,24 @@ final class CodeXInjectorTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: tmpFile))
     }
 
+    func testInstallEnablesBothFeatureAndHooks() throws {
+        let tmp = makeTempDir()
+        let injector = CodeXInjector(paths: Paths(home: tmp))
+        try injector.install()
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(tmp)/.codex/config.toml"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(tmp)/.codex/hooks.json"))
+    }
+
+    func testUninstallRemovesHooksJSON() throws {
+        let tmp = makeTempDir()
+        let injector = CodeXInjector(paths: Paths(home: tmp))
+        try injector.install()
+        try injector.uninstall()
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: "\(tmp)/.codex/hooks.json"))
+    }
+
     private func makeTempDir() -> String {
         let dir = NSTemporaryDirectory() + "tmwid-codex-test-\(UUID().uuidString)"
         try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
