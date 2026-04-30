@@ -13,10 +13,16 @@ DMG_NAME="$APP_NAME-$VERSION.dmg"
 
 echo "=== Building $APP_NAME v$VERSION ==="
 
-# 1. Build release binary
-echo "[1/5] Building release binary..."
+# 1. Build release binary (universal: arm64 + x86_64)
+echo "[1/5] Building release binary (universal)..."
 cd "$PROJECT_DIR"
-swift build -c release 2>&1
+swift build -c release --arch arm64 --arch x86_64 2>&1
+
+# SPM universal build places output under .build/apple/Products/Release
+UNIVERSAL_BUILD_DIR="$PROJECT_DIR/.build/apple/Products/Release"
+if [ -f "$UNIVERSAL_BUILD_DIR/$APP_NAME" ]; then
+    BUILD_DIR="$UNIVERSAL_BUILD_DIR"
+fi
 
 # 2. Create .iconset from animation frame
 echo "[2/5] Creating app icon..."

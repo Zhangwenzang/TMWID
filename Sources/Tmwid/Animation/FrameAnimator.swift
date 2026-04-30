@@ -51,14 +51,21 @@ public final class FrameAnimator: ObservableObject {
         let bundle = resourceBundle()
         return (0..<count).map { i in
             let name = String(format: "%@-%03d", prefix, i + 1)
-            // Try loading from xcassets directory structure in bundle
+
+            // Universal build: asset catalog compiled to Assets.car — use NSImage(named:) via bundle
+            if let bundle = bundle, let img = bundle.image(forResource: name) {
+                return img
+            }
+
+            // Single-arch SPM build: flat xcassets dir next to executable
             if let bundlePath = bundle?.resourcePath {
                 let pngPath = "\(bundlePath)/Assets.xcassets/\(name).imageset/\(name).png"
                 if let img = NSImage(contentsOfFile: pngPath) {
                     return img
                 }
             }
-            // Fallback: try bundle image resource
+
+            // Fallback: legacy bundle image resource lookup
             if let bundle = bundle,
                let url = bundle.urlForImageResource(name),
                let img = NSImage(contentsOf: url) {

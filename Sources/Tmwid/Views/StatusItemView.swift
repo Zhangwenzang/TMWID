@@ -33,6 +33,7 @@ public struct StatusItemView: View {
                     .monospacedDigit()
             }
         }
+        .contentShape(Rectangle())
         .onAppear { animator.start() }
         .onDisappear { animator.stop() }
         .onTapGesture { onTap?() }

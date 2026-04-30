@@ -26,6 +26,7 @@ struct BubbleContent: View {
     @ObservedObject var state: AppState
     var onMinimize: (() -> Void)?
     var onStatusTap: ((StatusKind) -> Void)?
+    var onHover: (() -> Void)?
     @State private var isHovered = false
     @State private var isButtonHovered = false
 
@@ -84,6 +85,9 @@ struct BubbleContent: View {
             .padding(.top, 2)
             .padding(.trailing, 2)
         }
-        .onHover { hovering in isHovered = hovering }
+        .onHover { hovering in
+            isHovered = hovering
+            if hovering { onHover?() }
+        }
     }
 }

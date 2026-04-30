@@ -122,6 +122,9 @@ public final class BubbleWindowController {
             self?.minimizeToMenuBar()
         }, onStatusTap: { [weak self] kind in
             self?.onStatusTap?(kind)
+        }, onHover: { [weak self] in
+            NSApp.activate(ignoringOtherApps: true)
+            self?.window?.makeKey()
         })
         let host = NSHostingView(rootView: content)
 
@@ -129,6 +132,11 @@ public final class BubbleWindowController {
         let size = NSSize(width: max(fitting.width, 80), height: max(fitting.height, 60))
         host.frame = NSRect(origin: .zero, size: size)
         host.autoresizingMask = [.width, .height]
+
+        // Wrap in AcceptsFirstMouseView so clicks work immediately
+        let wrapper = AcceptsFirstMouseView(frame: NSRect(origin: .zero, size: size))
+        wrapper.autoresizingMask = [.width, .height]
+        wrapper.addSubview(host)
 
         // Use .titled (not .borderless) so NSVisualEffectView can blur
         // content behind the window. Hide all the chrome to keep it bubble-like.
@@ -152,7 +160,9 @@ public final class BubbleWindowController {
         w.level = .floating
         w.isMovableByWindowBackground = true
         w.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        w.contentView = host
+        w.ignoresMouseEvents = false
+        w.acceptsMouseMovedEvents = true
+        w.contentView = wrapper
 
         if let screen = NSScreen.main {
             let margin: CGFloat = 20
