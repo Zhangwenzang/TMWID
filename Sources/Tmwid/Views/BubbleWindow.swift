@@ -10,6 +10,7 @@ public final class BubbleWindowController {
     private var isAnimating = false
 
     public var onMinimize: (() -> Void)?
+    public var onStatusTap: ((StatusKind) -> Void)?
 
     public var isVisible: Bool {
         window?.isVisible ?? false
@@ -105,6 +106,7 @@ public final class BubbleWindowController {
 
     private func updateSize() {
         guard let host = hostingView, let w = window else { return }
+        host.layoutSubtreeIfNeeded()
         let fitting = host.fittingSize
         let newSize = NSSize(width: max(fitting.width, 80), height: max(fitting.height, 60))
 
@@ -118,6 +120,8 @@ public final class BubbleWindowController {
     private func makeWindow() {
         let content = BubbleContent(state: state, onMinimize: { [weak self] in
             self?.minimizeToMenuBar()
+        }, onStatusTap: { [weak self] kind in
+            self?.onStatusTap?(kind)
         })
         let host = NSHostingView(rootView: content)
 
@@ -126,12 +130,22 @@ public final class BubbleWindowController {
         host.frame = NSRect(origin: .zero, size: size)
         host.autoresizingMask = [.width, .height]
 
+        // Use .titled (not .borderless) so NSVisualEffectView can blur
+        // content behind the window. Hide all the chrome to keep it bubble-like.
         let w = NSWindow(
             contentRect: NSRect(origin: .zero, size: size),
-            styleMask: [.borderless],
+            styleMask: [.titled, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
+        w.titleVisibility = .hidden
+        w.titlebarAppearsTransparent = true
+        if #available(macOS 11.0, *) {
+            w.titlebarSeparatorStyle = .none
+        }
+        w.standardWindowButton(.closeButton)?.isHidden = true
+        w.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        w.standardWindowButton(.zoomButton)?.isHidden = true
         w.isOpaque = false
         w.backgroundColor = .clear
         w.hasShadow = true

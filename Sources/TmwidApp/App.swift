@@ -12,6 +12,8 @@ struct TmwidApp: App {
     @State private var bubble: BubbleWindowController?
     @State private var injector: SettingsInjector?
     @State private var sound: SoundPlayer?
+    @State private var discovery: SessionDiscovery?
+    @State private var activator: SessionActivator?
 
     private let paths = Paths()
 
@@ -76,14 +78,36 @@ struct TmwidApp: App {
         h.startPeriodic()
         health = h
 
+        let act = SessionActivator()
+        activator = act
+
         let b = BubbleWindowController(state: state)
         b.onMinimize = {
             bubbleEnabled = false
+        }
+        b.onStatusTap = { kind in
+            if let session = state.sessions(for: kind).first {
+                act.activate(session: session)
+            }
         }
         bubble = b
 
         let s = SoundPlayer()
         s.playIfNeeded(currentSessions: state.sessions, enabled: false)
         sound = s
+
+        let d = SessionDiscovery(
+            stateDir: paths.stateDir,
+            claudeProjectsDir: paths.claudeProjectsDir
+        )
+        d.onDiscovered = { [weak w] in
+            // Re-scan state files so AppState picks up newly discovered sessions
+            guard let w else { return }
+            let sessions = w.scan()
+            Task { @MainActor in state.update(with: sessions) }
+        }
+        d.scanOnce()
+        d.startWatching()
+        discovery = d
     }
 }
