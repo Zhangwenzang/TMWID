@@ -1,54 +1,65 @@
 import SwiftUI
 import AppKit
 
-struct SessionListView: View {
+public struct SessionListView: View {
     let sessions: [SessionState]
     let activator: SessionActivator
-    var onSessionTap: ((SessionState) -> Void)?
+    var onTap: ((SessionState) -> Void)?
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ForEach(sessions, id: \.sessionId) { session in
-                SessionRow(session: session, activator: activator, onTap: { onSessionTap?(session) })
+    public init(sessions: [SessionState], activator: SessionActivator, onTap: ((SessionState) -> Void)? = nil) {
+        self.sessions = sessions
+        self.activator = activator
+        self.onTap = onTap
+    }
+
+    public var body: some View {
+        VStack(spacing: 1) {
+            ForEach(sessions) { session in
+                SessionRowView(session: session, activator: activator)
+                    .contentShape(Rectangle())
+                    .onTapGesture { onTap?(session) }
             }
         }
-        .padding(.top, 8)
+        .padding(.top, 10)
+        .frame(width: 180)
     }
 }
 
-struct SessionRow: View {
+struct SessionRowView: View {
     let session: SessionState
     let activator: SessionActivator
-    var onTap: (() -> Void)?
-    @State private var appIcon: NSImage?
+    @State private var isHovered = false
 
     var body: some View {
-        HStack(spacing: 8) {
-            if let icon = appIcon {
+        HStack(spacing: 10) {
+            if let icon = activator.appIcon(for: session.pid) {
                 Image(nsImage: icon)
                     .resizable()
                     .frame(width: 20, height: 20)
-                    .cornerRadius(4)
-            } else {
-                Color.gray.opacity(0.3)
-                    .frame(width: 20, height: 20)
-                    .cornerRadius(4)
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
             }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(session.sessionId)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.white)
                     .lineLimit(1)
-                Text((session.cwd as NSString).lastPathComponent)
+
+                Text(projectName(from: session.cwd))
                     .font(.system(size: 10))
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(.white.opacity(0.5))
                     .lineLimit(1)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Spacer(minLength: 0)
         }
-        .contentShape(Rectangle())
-        .onTapGesture { onTap?() }
-        .onAppear { appIcon = activator.getAppIcon(for: session.pid) }
+        .padding(10)
+        .background(isHovered ? Color.white.opacity(0.1) : Color.clear)
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .onHover { hovering in isHovered = hovering }
+    }
+
+    private func projectName(from path: String) -> String {
+        URL(fileURLWithPath: path).lastPathComponent
     }
 }
