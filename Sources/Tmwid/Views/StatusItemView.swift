@@ -20,17 +20,26 @@ public struct StatusItemView: View {
     }
 
     public var body: some View {
-        Image(nsImage: animator.currentImage)
-            .resizable()
-            .interpolation(.none)
-            .frame(width: size, height: size)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .contentShape(Rectangle())
-            .onAppear { animator.start() }
-            .onDisappear { animator.stop() }
-            .onTapGesture { onTap?() }
-            .onHover { hovering in onHover?(hovering) }
+        VStack(spacing: size > 24 ? 4 : 2) {
+            Image(nsImage: animator.currentImage)
+                .resizable()
+                .interpolation(.none)
+                .frame(width: size, height: size)
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: size > 24 ? 6 : 3))
+            if size > 24 {
+                Text("\(count)")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.4), radius: 1, y: 1)
+                    .monospacedDigit()
+            }
+        }
+        .contentShape(Rectangle())
+        .onAppear { animator.start() }
+        .onDisappear { animator.stop() }
+        .onTapGesture { onTap?() }
+        .onHover { hovering in onHover?(hovering) }
     }
 
     private static func config(for kind: StatusKind) -> (prefix: String, count: Int, fps: Double) {
