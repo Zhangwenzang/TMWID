@@ -119,6 +119,7 @@ final class CodeXInjectorTests: XCTestCase {
 
     func testCodeXAndClaudeCodeCoexist() throws {
         let tmp = makeTempDir()
+        addTeardownBlock { try? FileManager.default.removeItem(atPath: tmp) }
 
         let claudeInj = SettingsInjector(paths: Paths(home: tmp))
         try claudeInj.install()
@@ -128,10 +129,17 @@ final class CodeXInjectorTests: XCTestCase {
 
         XCTAssertTrue(FileManager.default.fileExists(atPath: "\(tmp)/.claude/settings.json"))
         XCTAssertTrue(FileManager.default.fileExists(atPath: "\(tmp)/.codex/hooks.json"))
+
+        let claudeSettings = try String(contentsOfFile: "\(tmp)/.claude/settings.json", encoding: .utf8)
+        XCTAssertTrue(claudeSettings.contains("# tmwid-v2-hook"))
+
+        let codexHooks = try String(contentsOfFile: "\(tmp)/.codex/hooks.json", encoding: .utf8)
+        XCTAssertTrue(codexHooks.contains("UserPromptSubmit"), "hooks.json content: \(codexHooks)")
     }
 
     func testUninstallOneDoesNotAffectOther() throws {
         let tmp = makeTempDir()
+        addTeardownBlock { try? FileManager.default.removeItem(atPath: tmp) }
 
         let claudeInj = SettingsInjector(paths: Paths(home: tmp))
         try claudeInj.install()
@@ -142,6 +150,27 @@ final class CodeXInjectorTests: XCTestCase {
         try codexInj.uninstall()
 
         XCTAssertTrue(FileManager.default.fileExists(atPath: "\(tmp)/.claude/settings.json"))
+        let claudeSettings = try String(contentsOfFile: "\(tmp)/.claude/settings.json", encoding: .utf8)
+        XCTAssertTrue(claudeSettings.contains("# tmwid-v2-hook"))
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: "\(tmp)/.codex/hooks.json"))
+    }
+
+    func testUninstallClaudeCodeDoesNotAffectCodeX() throws {
+        let tmp = makeTempDir()
+        addTeardownBlock { try? FileManager.default.removeItem(atPath: tmp) }
+
+        let claudeInj = SettingsInjector(paths: Paths(home: tmp))
+        try claudeInj.install()
+
+        let codexInj = CodeXInjector(paths: Paths(home: tmp))
+        try codexInj.install()
+
+        try claudeInj.uninstall()
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(tmp)/.codex/hooks.json"))
+        let codexHooks = try String(contentsOfFile: "\(tmp)/.codex/hooks.json", encoding: .utf8)
+        XCTAssertTrue(codexHooks.contains("UserPromptSubmit"))
     }
 
     private func makeTempDir() -> String {
