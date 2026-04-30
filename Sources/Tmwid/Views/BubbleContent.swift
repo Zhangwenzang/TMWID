@@ -28,6 +28,7 @@ struct BubbleContent: View {
     var onStatusTap: ((StatusKind) -> Void)?
     var onSessionTap: ((SessionState) -> Void)?
     var onHover: (() -> Void)?
+    var onSizeChange: (() -> Void)?
     var activator: SessionActivator?
     @State private var isHovered = false
     @State private var isButtonHovered = false
@@ -41,7 +42,7 @@ struct BubbleContent: View {
                         StatusItemView(kind: .working, count: state.workingCount, onTap: {
                             onStatusTap?(.working)
                         }, onHover: { hovering in
-                            expandedStatus = hovering ? .working : nil
+                            if hovering { expandedStatus = .working }
                         })
                     }
                     if state.askCount > 0 {
@@ -94,6 +95,9 @@ struct BubbleContent: View {
             )
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .animation(.easeInOut(duration: 0.2), value: expandedStatus)
+            .onChange(of: expandedStatus) { _ in
+                DispatchQueue.main.async { onSizeChange?() }
+            }
 
             // Minimize button — top-right of the bubble
             Button(action: { onMinimize?() }) {

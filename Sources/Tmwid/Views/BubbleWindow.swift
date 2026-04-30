@@ -129,6 +129,8 @@ public final class BubbleWindowController {
         }, onHover: { [weak self] in
             NSApp.activate(ignoringOtherApps: true)
             self?.window?.makeKey()
+        }, onSizeChange: { [weak self] in
+            self?.updateSize()
         }, activator: activator)
         let host = NSHostingView(rootView: content)
 
