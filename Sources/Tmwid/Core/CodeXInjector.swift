@@ -78,7 +78,9 @@ public final class CodeXInjector {
 
     public func install() throws {
         try enableHooksFeature()
-        try writeHooksJSON()
+        if !FileManager.default.fileExists(atPath: paths.codexHooksJSON) {
+            try writeHooksJSON()
+        }
     }
 
     public func uninstall() throws {

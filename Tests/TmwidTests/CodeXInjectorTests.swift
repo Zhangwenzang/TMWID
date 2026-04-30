@@ -104,6 +104,19 @@ final class CodeXInjectorTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: "\(tmp)/.codex/hooks.json"))
     }
 
+    func testInstallIsIdempotent() throws {
+        let tmp = makeTempDir()
+        let injector = CodeXInjector(paths: Paths(home: tmp))
+
+        try injector.install()
+        let firstHooksContent = try String(contentsOfFile: "\(tmp)/.codex/hooks.json", encoding: .utf8)
+
+        try injector.install()
+        let secondHooksContent = try String(contentsOfFile: "\(tmp)/.codex/hooks.json", encoding: .utf8)
+
+        XCTAssertEqual(firstHooksContent, secondHooksContent, "重复 install 不应修改 hooks.json")
+    }
+
     private func makeTempDir() -> String {
         let dir = NSTemporaryDirectory() + "tmwid-codex-test-\(UUID().uuidString)"
         try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
