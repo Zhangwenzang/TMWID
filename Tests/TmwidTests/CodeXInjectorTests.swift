@@ -62,6 +62,30 @@ final class CodeXInjectorTests: XCTestCase {
         XCTAssertThrowsError(try injector.writeHooksJSON())
     }
 
+    func testWriteHooksJSONCleansUpTmpFileOnFailure() throws {
+        let tmp = makeTempDir()
+        let codexDir = "\(tmp)/.codex"
+        try FileManager.default.createDirectory(atPath: codexDir, withIntermediateDirectories: true)
+
+        let tmpFile = "\(codexDir)/hooks.json.tmp.\(getpid())"
+
+        // 用作用域触发 defer
+        do {
+            let hooksStructure: [String: Any] = ["hooks": [:]]
+            let data = try JSONSerialization.data(withJSONObject: hooksStructure, options: [])
+            let badTarget = "\(codexDir)/nonexistent/hooks.json"
+
+            defer { try? FileManager.default.removeItem(atPath: tmpFile) }
+            try data.write(to: URL(fileURLWithPath: tmpFile), options: .atomic)
+
+            let result = rename(tmpFile, badTarget)
+            XCTAssertNotEqual(result, 0, "rename 应该失败")
+        }
+
+        // defer 已执行，验证临时文件被清理
+        XCTAssertFalse(FileManager.default.fileExists(atPath: tmpFile))
+    }
+
     private func makeTempDir() -> String {
         let dir = NSTemporaryDirectory() + "tmwid-codex-test-\(UUID().uuidString)"
         try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)

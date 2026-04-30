@@ -69,7 +69,10 @@ public final class CodeXInjector {
         )
 
         let tmp = paths.codexHooksJSON + ".tmp.\(getpid())"
+        defer { try? FileManager.default.removeItem(atPath: tmp) }
         try data.write(to: URL(fileURLWithPath: tmp), options: .atomic)
-        _ = rename(tmp, paths.codexHooksJSON)
+        if rename(tmp, paths.codexHooksJSON) != 0 {
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno))
+        }
     }
 }
