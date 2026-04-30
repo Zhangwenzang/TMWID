@@ -27,13 +27,6 @@ public struct StatusItemView: View {
                 .frame(width: size, height: size)
                 .background(Color.white)
                 .clipShape(RoundedRectangle(cornerRadius: size > 24 ? 6 : 3))
-            if size > 24 {
-                Text("\(count)")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.4), radius: 1, y: 1)
-                    .monospacedDigit()
-            }
         }
         .contentShape(Rectangle())
         .onAppear { animator.start() }
