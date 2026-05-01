@@ -106,7 +106,7 @@ public final class BubbleWindowController {
         })
     }
 
-    private func updateSize(animate: Bool = false) {
+    private func updateSize() {
         guard let host = hostingView, let w = window else { return }
         host.layoutSubtreeIfNeeded()
         let fitting = host.fittingSize
@@ -116,16 +116,7 @@ public final class BubbleWindowController {
         let dy = newSize.height - frame.height
         frame.origin.y -= dy
         frame.size = newSize
-
-        if animate {
-            NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = 0.2
-                ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                w.animator().setFrame(frame, display: true)
-            }
-        } else {
-            w.setFrame(frame, display: true, animate: false)
-        }
+        w.setFrame(frame, display: true, animate: false)
     }
 
     private func makeWindow() {
@@ -139,7 +130,7 @@ public final class BubbleWindowController {
             NSApp.activate(ignoringOtherApps: true)
             self?.window?.makeKey()
         }, onSizeChange: { [weak self] in
-            self?.updateSize(animate: true)
+            self?.updateSize()
         }, activator: activator)
         let host = NSHostingView(rootView: content)
 
