@@ -70,14 +70,14 @@ public final class BubbleWindowController {
     public func restoreFromMenuBar() {
         guard let w = window else {
             makeWindow()
-            updateSize()
+            updateSize(animate: false)
             window?.orderFrontRegardless()
             return
         }
 
         // If we have no saved frame, just show normally
         guard lastFrame.width > 16 else {
-            updateSize()
+            updateSize(animate: false)
             w.orderFrontRegardless()
             return
         }
@@ -92,7 +92,7 @@ public final class BubbleWindowController {
             start = NSRect(x: lastFrame.midX, y: lastFrame.midY, width: 16, height: 16)
         }
 
-        updateSize()
+        updateSize(animate: false)
         let targetFrame = w.frame
         w.setFrame(start, display: false)
         w.alphaValue = 0
@@ -106,17 +106,30 @@ public final class BubbleWindowController {
         })
     }
 
-    private func updateSize() {
+    private func updateSize(animate: Bool = true) {
         guard let host = hostingView, let w = window else { return }
         host.layoutSubtreeIfNeeded()
         let fitting = host.fittingSize
         let newSize = NSSize(width: max(fitting.width, 80), height: max(fitting.height, 60))
 
+        // Keep host and wrapper in sync with the window content size
+        host.frame.size = newSize
+        host.superview?.frame.size = newSize
+
         var frame = w.frame
         let dy = newSize.height - frame.height
         frame.origin.y -= dy
         frame.size = newSize
-        w.setFrame(frame, display: true, animate: false)
+
+        if animate {
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.35
+                ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                w.animator().setFrame(frame, display: true)
+            }
+        } else {
+            w.setFrame(frame, display: true, animate: false)
+        }
     }
 
     private func makeWindow() {
@@ -137,11 +150,9 @@ public final class BubbleWindowController {
         let fitting = host.fittingSize
         let size = NSSize(width: max(fitting.width, 80), height: max(fitting.height, 60))
         host.frame = NSRect(origin: .zero, size: size)
-        host.autoresizingMask = [.width, .height]
 
         // Wrap in AcceptsFirstMouseView so clicks work immediately
         let wrapper = AcceptsFirstMouseView(frame: NSRect(origin: .zero, size: size))
-        wrapper.autoresizingMask = [.width, .height]
         wrapper.addSubview(host)
 
         // Use .titled (not .borderless) so NSVisualEffectView can blur

@@ -36,7 +36,7 @@ struct BubbleContent: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 14) {
                     if state.workingCount > 0 {
                         StatusItemView(kind: .working, count: state.workingCount, onTap: {
@@ -82,7 +82,6 @@ struct BubbleContent: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .frame(width: expandedStatus != nil ? 180 : nil)
             .background(
                 ZStack {
                     VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
@@ -95,7 +94,7 @@ struct BubbleContent: View {
             )
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .onChange(of: expandedStatus) { _ in
-                DispatchQueue.main.async { onSizeChange?() }
+                onSizeChange?()
             }
 
             // Minimize button — top-right of the bubble
