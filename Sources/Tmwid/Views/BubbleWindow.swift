@@ -113,8 +113,8 @@ public final class BubbleWindowController {
         let newSize = NSSize(width: max(fitting.width, 80), height: max(fitting.height, 60))
 
         var frame = w.frame
-        let dx = newSize.width - frame.width
-        frame.origin.x -= dx
+        let dy = newSize.height - frame.height
+        frame.origin.y -= dy
         frame.size = newSize
 
         if animate {
