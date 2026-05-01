@@ -112,10 +112,6 @@ public final class BubbleWindowController {
         let fitting = host.fittingSize
         let newSize = NSSize(width: max(fitting.width, 80), height: max(fitting.height, 60))
 
-        // Keep host and wrapper in sync with the window content size
-        host.frame.size = newSize
-        host.superview?.frame.size = newSize
-
         var frame = w.frame
         let dy = newSize.height - frame.height
         frame.origin.y -= dy
@@ -142,17 +138,19 @@ public final class BubbleWindowController {
         }, onHover: { [weak self] in
             NSApp.activate(ignoringOtherApps: true)
             self?.window?.makeKey()
-        }, onSizeChange: { [weak self] in
-            self?.updateSize()
+        }, onSizeChange: { [weak self] animate in
+            self?.updateSize(animate: animate)
         }, activator: activator)
         let host = NSHostingView(rootView: content)
 
         let fitting = host.fittingSize
         let size = NSSize(width: max(fitting.width, 80), height: max(fitting.height, 60))
         host.frame = NSRect(origin: .zero, size: size)
+        host.autoresizingMask = [.width, .height]
 
         // Wrap in AcceptsFirstMouseView so clicks work immediately
         let wrapper = AcceptsFirstMouseView(frame: NSRect(origin: .zero, size: size))
+        wrapper.autoresizingMask = [.width, .height]
         wrapper.addSubview(host)
 
         // Use .titled (not .borderless) so NSVisualEffectView can blur

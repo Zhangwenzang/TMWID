@@ -28,7 +28,7 @@ struct BubbleContent: View {
     var onStatusTap: ((StatusKind) -> Void)?
     var onSessionTap: ((SessionState) -> Void)?
     var onHover: (() -> Void)?
-    var onSizeChange: (() -> Void)?
+    var onSizeChange: ((Bool) -> Void)?
     var activator: SessionActivator?
     @State private var isHovered = false
     @State private var isButtonHovered = false
@@ -93,8 +93,9 @@ struct BubbleContent: View {
                     .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .onChange(of: expandedStatus) { _ in
-                onSizeChange?()
+            .onChange(of: expandedStatus) { newValue in
+                let expand = newValue != nil
+                DispatchQueue.main.async { onSizeChange?(expand) }
             }
 
             // Minimize button — top-right of the bubble
