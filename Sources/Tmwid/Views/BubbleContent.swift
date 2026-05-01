@@ -49,21 +49,21 @@ struct BubbleContent: View {
                         StatusItemView(kind: .ask, count: state.askCount, onTap: {
                             onStatusTap?(.ask)
                         }, onHover: { hovering in
-                            expandedStatus = hovering ? .ask : nil
+                            if hovering { expandedStatus = .ask }
                         })
                     }
                     if state.doneCount > 0 {
                         StatusItemView(kind: .done, count: state.doneCount, onTap: {
                             onStatusTap?(.done)
                         }, onHover: { hovering in
-                            expandedStatus = hovering ? .done : nil
+                            if hovering { expandedStatus = .done }
                         })
                     }
                     if state.apiErrCount > 0 {
                         StatusItemView(kind: .apiErr, count: state.apiErrCount, onTap: {
                             onStatusTap?(.apiErr)
                         }, onHover: { hovering in
-                            expandedStatus = hovering ? .apiErr : nil
+                            if hovering { expandedStatus = .apiErr }
                         })
                     }
                 }
@@ -94,7 +94,6 @@ struct BubbleContent: View {
                     .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .animation(.easeInOut(duration: 0.2), value: expandedStatus)
             .onChange(of: expandedStatus) { _ in
                 DispatchQueue.main.async { onSizeChange?() }
             }
