@@ -63,6 +63,16 @@ public final class FrameAnimator: ObservableObject {
                 if let img = NSImage(contentsOfFile: pngPath) {
                     return img
                 }
+
+                let flatPath = "\(bundlePath)/\(name).png"
+                if let img = NSImage(contentsOfFile: flatPath) {
+                    return img
+                }
+
+                let imageSetPath = "\(bundlePath)/\(prefix).imageset/\(name).png"
+                if let img = NSImage(contentsOfFile: imageSetPath) {
+                    return img
+                }
             }
 
             // Fallback: legacy bundle image resource lookup

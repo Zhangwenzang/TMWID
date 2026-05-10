@@ -20,4 +20,10 @@ final class FrameAnimatorTests: XCTestCase {
         XCTAssertEqual(anim.frameName(at: 0), "ask-001")
         XCTAssertEqual(anim.frameName(at: 11), "ask-012")
     }
+
+    func testApiErrorFramesLoad() {
+        let anim = FrameAnimator(prefix: "apierr", count: 50, fps: 12)
+        XCTAssertGreaterThan(anim.currentImage.size.width, 0)
+        XCTAssertGreaterThan(anim.currentImage.size.height, 0)
+    }
 }

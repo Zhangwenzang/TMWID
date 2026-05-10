@@ -35,70 +35,79 @@ struct BubbleContent: View {
     @State private var expandedStatus: StatusKind?
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 14) {
-                    if state.workingCount > 0 {
-                        StatusItemView(kind: .working, count: state.workingCount, onTap: {
-                            onStatusTap?(.working)
-                        }, onHover: { hovering in
-                            if hovering { expandedStatus = .working }
-                        })
-                    }
-                    if state.askCount > 0 {
-                        StatusItemView(kind: .ask, count: state.askCount, onTap: {
-                            onStatusTap?(.ask)
-                        }, onHover: { hovering in
-                            if hovering { expandedStatus = .ask }
-                        })
-                    }
-                    if state.doneCount > 0 {
-                        StatusItemView(kind: .done, count: state.doneCount, onTap: {
-                            onStatusTap?(.done)
-                        }, onHover: { hovering in
-                            if hovering { expandedStatus = .done }
-                        })
-                    }
-                    if state.apiErrCount > 0 {
-                        StatusItemView(kind: .apiErr, count: state.apiErrCount, onTap: {
-                            onStatusTap?(.apiErr)
-                        }, onHover: { hovering in
-                            if hovering { expandedStatus = .apiErr }
-                        })
-                    }
-                }
-
-                if let status = expandedStatus, let activator = activator {
-                    Divider()
-                        .background(Color.white.opacity(0.1))
-                        .padding(.top, 10)
-
-                    SessionListView(
-                        sessions: state.sessions(for: status),
-                        activator: activator,
-                        onTap: { session in onSessionTap?(session) }
-                    )
-                }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                ZStack {
-                    VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
-                    Color(red: 30/255, green: 30/255, blue: 40/255).opacity(0.45)
-                }
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        bubbleBody
+            .fixedSize(horizontal: true, vertical: true)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .onChange(of: expandedStatus) { newValue in
-                let expand = newValue != nil
-                DispatchQueue.main.async { onSizeChange?(expand) }
+                // Keep hover transitions structurally stable: resize the transparent
+                // host window only after SwiftUI has produced the new intrinsic size,
+                // with no intermediate frame animation that can clip the bubble.
+                _ = newValue
+                DispatchQueue.main.async { onSizeChange?(false) }
+            }
+    }
+
+    private var bubbleBody: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Section 1 — status icons, left-aligned, independent width
+            HStack(spacing: 14) {
+                if state.workingCount > 0 {
+                    StatusItemView(kind: .working, count: state.workingCount, onTap: {
+                        onStatusTap?(.working)
+                    }, onHover: { hovering in
+                        if hovering { expandedStatus = .working }
+                    })
+                }
+                if state.askCount > 0 {
+                    StatusItemView(kind: .ask, count: state.askCount, onTap: {
+                        onStatusTap?(.ask)
+                    }, onHover: { hovering in
+                        if hovering { expandedStatus = .ask }
+                    })
+                }
+                if state.doneCount > 0 {
+                    StatusItemView(kind: .done, count: state.doneCount, onTap: {
+                        onStatusTap?(.done)
+                    }, onHover: { hovering in
+                        if hovering { expandedStatus = .done }
+                    })
+                }
+                if state.apiErrCount > 0 {
+                    StatusItemView(kind: .apiErr, count: state.apiErrCount, onTap: {
+                        onStatusTap?(.apiErr)
+                    }, onHover: { hovering in
+                        if hovering { expandedStatus = .apiErr }
+                    })
+                }
             }
 
-            // Minimize button — top-right of the bubble
+            // Section 2 — session list, appears on hover, independent width (180pt)
+            if let status = expandedStatus, let activator = activator {
+                Divider()
+                    .background(Color.white.opacity(0.1))
+                    .padding(.top, 10)
+
+                SessionListView(
+                    sessions: state.sessions(for: status),
+                    activator: activator,
+                    onTap: { session in onSessionTap?(session) }
+                )
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            ZStack {
+                VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+                Color(red: 30/255, green: 30/255, blue: 40/255).opacity(0.45)
+            }
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
+                .allowsHitTesting(false)
+        )
+        .overlay(alignment: .topTrailing) {
             Button(action: { onMinimize?() }) {
                 Text("\u{2212}")
                     .font(.system(size: 14, weight: .medium))
@@ -116,10 +125,10 @@ struct BubbleContent: View {
             .buttonStyle(.plain)
             .onHover { hovering in isButtonHovered = hovering }
             .opacity(isHovered ? 1 : 0)
-            .animation(.easeInOut(duration: 0.15), value: isHovered)
             .padding(.top, 2)
             .padding(.trailing, 2)
         }
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .onHover { hovering in
             isHovered = hovering
             if hovering { onHover?() }

@@ -7,10 +7,12 @@ public struct MenuBarLabel: View {
     @StateObject private var workingAnim = FrameAnimator(prefix: "working", count: 14, fps: 10)
     @StateObject private var askAnim = FrameAnimator(prefix: "ask", count: 12, fps: 8)
     @StateObject private var doneAnim = FrameAnimator(prefix: "done", count: 10, fps: 6)
+    @StateObject private var apiErrAnim = FrameAnimator(prefix: "apierr", count: 50, fps: 12)
 
     @State private var wc = 0
     @State private var ac = 0
     @State private var dc = 0
+    @State private var ec = 0
 
     public init(state: AppState) {
         self.state = state
@@ -29,6 +31,7 @@ public struct MenuBarLabel: View {
         wc = state.workingCount
         ac = state.askCount
         dc = state.doneCount
+        ec = state.apiErrCount
     }
 
     private func compositeImage() -> NSImage {
@@ -44,11 +47,14 @@ public struct MenuBarLabel: View {
             let count: Int
         }
 
-        let items: [ItemInfo] = [
+        var items: [ItemInfo] = [
             ItemInfo(image: workingAnim.currentImage, count: wc),
             ItemInfo(image: askAnim.currentImage, count: ac),
             ItemInfo(image: doneAnim.currentImage, count: dc),
         ]
+        if ec > 0 {
+            items.append(ItemInfo(image: apiErrAnim.currentImage, count: ec))
+        }
 
         // Measure total width
         var totalWidth: CGFloat = 0
@@ -106,11 +112,13 @@ public struct MenuBarLabel: View {
         workingAnim.start()
         askAnim.start()
         doneAnim.start()
+        apiErrAnim.start()
     }
 
     private func stopAll() {
         workingAnim.stop()
         askAnim.stop()
         doneAnim.stop()
+        apiErrAnim.stop()
     }
 }

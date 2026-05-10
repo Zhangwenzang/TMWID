@@ -25,6 +25,7 @@ public struct MenuBarView: View {
                 if state.workingCount > 0 { Text("工作中: \(state.workingCount)") }
                 if state.askCount > 0     { Text("举手中: \(state.askCount)") }
                 if state.doneCount > 0    { Text("摸鱼中: \(state.doneCount)") }
+                if state.apiErrCount > 0  { Text("接口异常: \(state.apiErrCount)") }
             }
             Divider()
             Toggle("声音", isOn: $soundEnabled)
